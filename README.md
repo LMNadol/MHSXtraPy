@@ -1,4 +1,4 @@
-# MHSXtraPy
+# MHSXtraPy - Beta Version 
 
 MHSXtraPy is a set of Python codes for three-dimensional magnetohydrostatic (MHS) extrapolation from a given two-dimensional array, intended for the extrapolation of magnetic fields observed on the solar photosphere.
 
