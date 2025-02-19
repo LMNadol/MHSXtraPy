@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "mhsxtrapybeta"
+version = "0.1.0"
+description = ""
+authors = ["Lilli Nadol <lmn6@st-andrews.ac.uk>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+scipy = "^1.15.0"
+numba = "0.59.1"
+numpy = "1.26.4"
+matplotlib = "^3.10.0"
+astropy = "^7.0.0"
+sunpy = "^6.0.4"
+bs4 = "^0.0.2"
+lxml = "^5.3.0"
+zeep = "^4.3.1"
+drms = "^0.8.0"
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
