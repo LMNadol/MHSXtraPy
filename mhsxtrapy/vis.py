@@ -26,7 +26,7 @@ from mhsxtrapy.graphics_balanced import (
     plot_ddensity_xy as plot_ddensity_xy_balanced,
 )
 
-from msat.pyvis.fieldline3d import fieldline3d
+from mhsxtrapy.msat.pyvis.fieldline3d import fieldline3d
 
 import os
 

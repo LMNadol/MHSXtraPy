@@ -18,8 +18,6 @@ from mhsxtrapy.phibar import (
 )
 from mhsxtrapy.field2d import Field2dData, FluxBalanceState
 
-# autoDocstring.docstringFormat = "google"
-
 
 class WhichSolution(Enum):
     LOW = "Low"

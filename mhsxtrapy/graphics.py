@@ -12,7 +12,7 @@ from matplotlib import rc, colors
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.field2d import Field2dData
 
-from msat.pyvis.fieldline3d import fieldline3d
+from mhsxtrapy.msat.pyvis.fieldline3d import fieldline3d
 
 import os
 
