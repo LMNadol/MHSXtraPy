@@ -17,6 +17,7 @@ bs4 = "^0.0.2"
 lxml = "^5.3.0"
 zeep = "^4.3.1"
 drms = "^0.8.0"
+ipykernel = "^6.29.5"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.5"
