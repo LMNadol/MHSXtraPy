@@ -12,7 +12,7 @@ numba = "0.59.1"
 numpy = "1.26.4"
 matplotlib = "^3.10.0"
 astropy = "^7.0.0"
-sunpy = "^6.0.4"
+sunpy = {extras = ["all"], version = "^6.0.4"}
 bs4 = "^0.0.2"
 lxml = "^5.3.0"
 zeep = "^4.3.1"
