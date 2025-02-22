@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "mhsxtrapybeta"
+name = "mhsxtrapy"
 version = "0.1.0"
 description = ""
 authors = ["Lilli Nadol <lmn6@st-andrews.ac.uk>"]
