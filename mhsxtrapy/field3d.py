@@ -8,9 +8,9 @@ import pickle
 
 from functools import cached_property
 
-from mhsxtrapybeta.b3d import b3d, WhichSolution
-from mhsxtrapybeta.field2d import Field2dData, FluxBalanceState
-from mhsxtrapybeta.nff2ff import f_nw, dfdz_nw, f_low, dfdz_low
+from mhsxtrapy.b3d import b3d, WhichSolution
+from mhsxtrapy.field2d import Field2dData, FluxBalanceState
+from mhsxtrapy.nff2ff import f_nw, dfdz_nw, f_low, dfdz_low
 
 T_PHOTOSPHERE = 5600.0  # Photospheric temperature
 T_CORONA = 2.0 * 10.0**6  # Coronal temperature

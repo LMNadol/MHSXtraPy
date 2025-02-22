@@ -8,7 +8,7 @@ from typing import Tuple
 
 from enum import Enum
 
-from mhsxtrapybeta.phibar import (
+from mhsxtrapy.phibar import (
     phi,
     dphidz,
     phi_nw,
@@ -16,7 +16,7 @@ from mhsxtrapybeta.phibar import (
     dphidz_nw,
     dphidz_low,
 )
-from mhsxtrapybeta.field2d import Field2dData, FluxBalanceState
+from mhsxtrapy.field2d import Field2dData, FluxBalanceState
 
 
 class WhichSolution(Enum):

@@ -9,20 +9,20 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib import rc, colors
 
-from mhsxtrapybeta.field3d import Field3dData, FluxBalanceState
-from mhsxtrapybeta.field2d import Field2dData
-from mhsxtrapybeta.graphics import plot_magnetogram_3D as plot_magnetogram_3D_unbalanced
-from mhsxtrapybeta.graphics_balanced import (
+from mhsxtrapy.field3d import Field3dData, FluxBalanceState
+from mhsxtrapy.field2d import Field2dData
+from mhsxtrapy.graphics import plot_magnetogram_3D as plot_magnetogram_3D_unbalanced
+from mhsxtrapy.graphics_balanced import (
     plot_magnetogram_3D as plot_magnetogram_3D_balanced,
 )
 
-from mhsxtrapybeta.graphics import plot_dpressure_xy as plot_dpressure_xy_unbalanced
-from mhsxtrapybeta.graphics_balanced import (
+from mhsxtrapy.graphics import plot_dpressure_xy as plot_dpressure_xy_unbalanced
+from mhsxtrapy.graphics_balanced import (
     plot_dpressure_xy as plot_dpressure_xy_balanced,
 )
 
-from mhsxtrapybeta.graphics import plot_ddensity_xy as plot_ddensity_xy_unbalanced
-from mhsxtrapybeta.graphics_balanced import (
+from mhsxtrapy.graphics import plot_ddensity_xy as plot_ddensity_xy_unbalanced
+from mhsxtrapy.graphics_balanced import (
     plot_ddensity_xy as plot_ddensity_xy_balanced,
 )
 

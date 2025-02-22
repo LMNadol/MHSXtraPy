@@ -6,11 +6,14 @@ import numpy as np
 
 import math
 
+from scipy.ndimage import maximum_filter, minimum_filter, label, find_objects
+
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from matplotlib import rc, colors
 
-from mhsxtrapybeta.field3d import Field3dData
-from mhsxtrapybeta.field2d import Field2dData
+from mhsxtrapy.field3d import Field3dData
+from mhsxtrapy.field2d import Field2dData
 
 from msat.pyvis.fieldline3d import fieldline3d
 
@@ -65,85 +68,6 @@ L = 10**6
 G_SOLAR = 272.2
 
 
-def calculate_tick_count(min_val, max_val, relative_size):
-    """
-    Calculate optimal tick spacing considering the relative size of this axis
-    compared to the largest axis in the plot.
-
-    Parameters:
-    min_val: minimum value of the axis
-    max_val: maximum value of the axis
-    relative_size: length of this axis divided by length of longest axis
-    """
-    axis_length = abs(max_val - min_val)
-
-    # Base step size on axis length
-    if axis_length <= 5:
-        base_step = 0.5
-    elif axis_length <= 10:
-        base_step = 1.0
-    elif axis_length <= 20:
-        base_step = 2.0
-    elif axis_length <= 50:
-        base_step = 5.0
-    elif axis_length <= 100:
-        base_step = 10.0
-    else:  # <= 200
-        base_step = 20.0
-
-    # Adjust step size based on relative axis length
-    # For shorter axes (relative to the longest), increase step size to prevent crowding
-    if relative_size < 0.2:  # Very short axis
-        step_size = base_step * 4
-    elif relative_size < 0.5:  # Moderately short axis
-        step_size = base_step * 2
-    else:  # Normal or long axis
-        step_size = base_step
-
-    # Round min and max to step size
-    min_tick = np.ceil(min_val / step_size) * step_size
-    max_tick = np.floor(max_val / step_size) * step_size
-
-    num_ticks = int((max_tick - min_tick) / step_size) + 1
-    return np.linspace(min_tick, max_tick, num_ticks)
-
-
-def set_axis_labels(ax, x_length, y_length, z_length):
-    """
-    Set axis labels with improved positioning for largely different axis lengths
-    """
-    # Calculate length ratios using log scale to handle large differences
-    lengths = np.array([x_length, y_length, z_length])
-    log_lengths = np.log10(lengths)
-    max_log_length = np.max(log_lengths)
-
-    # Calculate relative sizes on log scale
-    x_relative = log_lengths[0] / max_log_length
-    y_relative = log_lengths[1] / max_log_length
-    z_relative = log_lengths[2] / max_log_length
-
-    # Base padding value
-    base_pad_x = x_length / 8.0
-    base_pad_y = y_length / 8.0
-    base_pad_z = z_length / 8.0
-
-    # Calculate padding with exponential scaling for very different lengths
-    def calculate_pad(relative_size, base_pad):
-        if relative_size < 0.5:
-            return base_pad * np.exp(2 * (1 - relative_size))
-        return base_pad
-
-    # Set labels with calculated padding
-    ax.set_xlabel(r"$x$ [Mm]", labelpad=calculate_pad(x_relative, base_pad_x))
-    ax.set_ylabel(r"$y$ [Mm]", labelpad=calculate_pad(y_relative, base_pad_y))
-    ax.set_zlabel(r"$z$ [Mm]", labelpad=calculate_pad(z_relative, base_pad_z))
-
-    # Adjust label rotations based on the relative sizes
-    ax.xaxis.label.set_rotation(20)
-    ax.yaxis.label.set_rotation(-20)
-    ax.zaxis.label.set_rotation(0)
-
-
 def plot_magnetogram_3D(
     data: Field3dData,
     view: Literal["los", "side", "angular"],
@@ -164,43 +88,26 @@ def plot_magnetogram_3D(
         data.z[-1],
     )
 
-    x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
-    y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
-
-    x_grid, y_grid = np.meshgrid(x_big, y_big)
+    x_grid, y_grid = np.meshgrid(data.x, data.y)
     fig = plt.figure()
     ax = fig.figure.add_subplot(111, projection="3d")
     ax.contourf(
-        x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
-        y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
+        x_grid,
+        y_grid,
         data.bz,
         20,
         cmap=cmap_magneto,
         offset=0.0,
     )
 
+    ax.set_xlabel(r"$x$ [Mm]", size=14)
+    ax.set_ylabel(r"$y$ [Mm]", size=14)
+    ax.set_zlabel(r"$z$ [Mm]", size=14)  # type: ignore
     ax.grid(False)
     ax.set_zlim(zmin, zmax)  # type: ignore
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(ymin, ymax)
     ax.set_box_aspect((xmax, ymax, zmax))  # type: ignore
-
-    x_length = abs(xmax - xmin)
-    y_length = abs(ymax - ymin)
-    z_length = abs(zmax - zmin)
-    max_length = max(x_length, y_length, z_length)
-
-    x_relative = x_length / max_length
-    y_relative = y_length / max_length
-    z_relative = z_length / max_length  # type: ignore
-
-    # Set axis labels with dynamic positioning
-    set_axis_labels(ax, x_length, y_length, z_length)
-
-    # Calculate and set ticks considering relative sizes
-    ax.set_xticks(calculate_tick_count(xmin, xmax, x_relative))
-    ax.set_yticks(calculate_tick_count(ymin, ymax, y_relative))
-    ax.set_zticks(calculate_tick_count(zmin, zmax, z_relative))  # type: ignore
 
     if footpoints == "all":
         plot_fieldlines_grid(data, ax)
@@ -227,7 +134,7 @@ def plot_magnetogram_3D(
         ax.set_yticklabels([])  # type: ignore
         ax.set_ylabel("")
 
-        [t.set_va("center") for t in ax.get_xticklabels()]  # type: ignore
+        [t.set_va("top") for t in ax.get_xticklabels()]  # type: ignore
         [t.set_ha("center") for t in ax.get_xticklabels()]  # type: ignore
 
         [t.set_va("center") for t in ax.get_zticklabels()]  # type: ignore
@@ -235,13 +142,13 @@ def plot_magnetogram_3D(
     elif view == "angular":
         ax.view_init(30, 240, 0)  # type: ignore
 
-        [t.set_va("center") for t in ax.get_yticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_yticklabels()]  # type: ignore
+        [t.set_va("bottom") for t in ax.get_yticklabels()]  # type: ignore
+        [t.set_ha("right") for t in ax.get_yticklabels()]  # type: ignore
 
-        [t.set_va("center") for t in ax.get_xticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_xticklabels()]  # type: ignore
+        [t.set_va("bottom") for t in ax.get_xticklabels()]  # type: ignore
+        [t.set_ha("left") for t in ax.get_xticklabels()]  # type: ignore
 
-        [t.set_va("center") for t in ax.get_zticklabels()]  # type: ignore
+        [t.set_va("top") for t in ax.get_zticklabels()]  # type: ignore
         [t.set_ha("center") for t in ax.get_zticklabels()]  # type: ignore
     else:
         raise ValueError(
@@ -255,7 +162,7 @@ def plot_magnetogram_3D(
     # Construct the path using the view variable
     path = f"figures/magnetogram-3D_{view}.png"
 
-    plt.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.4)
+    plt.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.2)
 
     plt.show()
 
@@ -273,9 +180,6 @@ def plot_fieldlines_grid(data: Field3dData, ax) -> None:
         data.z[0],
         data.z[-1],
     )
-
-    x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
-    y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
 
     x_0 = 1.0e-8
     y_0 = 1.0e-8
@@ -315,8 +219,8 @@ def plot_fieldlines_grid(data: Field3dData, ax) -> None:
             fieldline = fieldline3d(
                 ystart,
                 data.field,
-                y_big,
-                x_big,
+                data.y,
+                data.x,
                 data.z,
                 h1,
                 hmin,
@@ -382,9 +286,6 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
         data.z[-1],
     )
 
-    x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
-    y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
-
     h1 = 1.0 / 100.0  # Initial step length for fieldline3D
     eps = 1.0e-8
     # Tolerance to which we require point on field line known for fieldline3D
@@ -402,8 +303,8 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
     boxedges[0, 2] = zmin
     boxedges[1, 2] = zmax  # 2 * data.z0  # FOR ZOOM
 
-    for ix in range(0, data.nx, 10):
-        for iy in range(0, data.ny, 10):
+    for ix in range(0, data.nx, int(data.nx / 20)):
+        for iy in range(0, data.ny, int(data.ny / 20)):
             if sources[iy, ix] != 0 or sinks[iy, ix] != 0:
 
                 x_start = ix / (data.nx / xmax)  # + 1.0e-8
@@ -417,8 +318,8 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
                 fieldline = fieldline3d(
                     ystart,
                     data.field,
-                    y_big,
-                    x_big,
+                    data.y,
+                    data.x,
                     data.z,
                     h1,
                     hmin,
@@ -465,18 +366,16 @@ def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
         data.z[0],
         data.z[-1],
     )
-    x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
-    y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
 
-    x_grid, y_grid = np.meshgrid(x_big, y_big)
+    x_grid, y_grid = np.meshgrid(data.x, data.y)
 
     index = np.abs(data.z - z).argmin()
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     C = ax.contourf(
-        x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
-        y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
+        x_grid,
+        y_grid,
         abs(data.dpressure[:, :, index]) * (B0 * 10**-4) ** 2.0 / MU0,
         12,
         cmap=cmap_pressure,
@@ -520,18 +419,16 @@ def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
         data.z[0],
         data.z[-1],
     )
-    x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
-    y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
 
-    x_grid, y_grid = np.meshgrid(x_big, y_big)
+    x_grid, y_grid = np.meshgrid(data.x, data.y)
 
     index = np.abs(data.z - z).argmin()
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     C = ax.contourf(
-        x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
-        y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
+        x_grid,
+        y_grid,
         abs(data.ddensity[:, :, index]) * (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L),
         12,
         cmap=cmap_density,
