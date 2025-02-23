@@ -1,23 +1,18 @@
 from __future__ import annotations
 
+import math
+import os
 from typing import Literal, Tuple
 
-import numpy as np
-
-import math
-
-from scipy.ndimage import maximum_filter, minimum_filter, label, find_objects
-
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from matplotlib import rc, colors
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import colors, rc
+from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
-from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.field2d import Field2dData
-
+from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.msat.pyvis.fieldline3d import fieldline3d
-
-import os
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=True)

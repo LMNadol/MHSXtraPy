@@ -1,16 +1,14 @@
 from __future__ import annotations
 
+import pickle
 from dataclasses import dataclass
+from functools import cached_property
 
 import numpy as np
 
-import pickle
-
-from functools import cached_property
-
-from mhsxtrapy.b3d import b3d, WhichSolution
+from mhsxtrapy.b3d import WhichSolution, b3d
 from mhsxtrapy.field2d import Field2dData, FluxBalanceState
-from mhsxtrapy.nff2ff import f_nw, dfdz_nw, f_low, dfdz_low
+from mhsxtrapy.nff2ff import dfdz_low, dfdz_nw, f_low, f_nw
 
 T_PHOTOSPHERE = 5600.0  # Photospheric temperature
 T_CORONA = 2.0 * 10.0**6  # Coronal temperature

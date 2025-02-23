@@ -1,22 +1,13 @@
 from __future__ import annotations
 
-import numpy as np
-
 import logging
-
+from enum import Enum
 from typing import Tuple
 
-from enum import Enum
+import numpy as np
 
-from mhsxtrapy.phibar import (
-    phi,
-    dphidz,
-    phi_nw,
-    phi_low,
-    dphidz_nw,
-    dphidz_low,
-)
 from mhsxtrapy.field2d import Field2dData, FluxBalanceState
+from mhsxtrapy.phibar import dphidz, dphidz_low, dphidz_nw, phi, phi_low, phi_nw
 
 
 class WhichSolution(Enum):

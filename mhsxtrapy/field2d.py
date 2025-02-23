@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
-import numpy as np
-
 from enum import Enum
 
-from astropy.io.fits import open as astroopen
-from astropy.io.fits import getdata
-from astropy.coordinates import SkyCoord
-from astropy import units as u
-
+import numpy as np
 import sunpy.map
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+from astropy.io.fits import getdata
+from astropy.io.fits import open as astroopen
 
 
 class FluxBalanceState(Enum):

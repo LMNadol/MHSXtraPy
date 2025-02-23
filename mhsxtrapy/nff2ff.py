@@ -6,7 +6,7 @@ import numpy as np
 def f_nw(z: np.ndarray, z0: float, deltaz: float, a: float, b: float) -> np.ndarray:
     """
     Height profile of transition non-force-free to force-free
-    according to Neukirch and Wiegelmann (2019). Vectorisation with z possible,
+    according to NeukirÍch and Wiegelmann (2019). Vectorisation with z possible,
     returns array of size z.shape.
     """
 

@@ -1,38 +1,32 @@
 from __future__ import annotations
 
+import math
+import os
 from typing import Literal, Tuple
 
-import numpy as np
-
-import math
-
 import matplotlib.pyplot as plt
-from matplotlib import rc, colors
+import numpy as np
+from matplotlib import colors, rc
 
-from mhsxtrapy.field3d import Field3dData, FluxBalanceState
 from mhsxtrapy.field2d import Field2dData
+from mhsxtrapy.field3d import Field3dData, FluxBalanceState
+from mhsxtrapy.msat.pyvis.fieldline3d import fieldline3d
+from mhsxtrapy.plotting.graphics import plot_ddensity_xy as plot_ddensity_xy_unbalanced
+from mhsxtrapy.plotting.graphics import (
+    plot_dpressure_xy as plot_dpressure_xy_unbalanced,
+)
 from mhsxtrapy.plotting.graphics import (
     plot_magnetogram_3D as plot_magnetogram_3D_unbalanced,
 )
 from mhsxtrapy.plotting.graphics_balanced import (
-    plot_magnetogram_3D as plot_magnetogram_3D_balanced,
-)
-
-from mhsxtrapy.plotting.graphics import (
-    plot_dpressure_xy as plot_dpressure_xy_unbalanced,
+    plot_ddensity_xy as plot_ddensity_xy_balanced,
 )
 from mhsxtrapy.plotting.graphics_balanced import (
     plot_dpressure_xy as plot_dpressure_xy_balanced,
 )
-
-from mhsxtrapy.plotting.graphics import plot_ddensity_xy as plot_ddensity_xy_unbalanced
 from mhsxtrapy.plotting.graphics_balanced import (
-    plot_ddensity_xy as plot_ddensity_xy_balanced,
+    plot_magnetogram_3D as plot_magnetogram_3D_balanced,
 )
-
-from mhsxtrapy.msat.pyvis.fieldline3d import fieldline3d
-
-import os
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=True)
