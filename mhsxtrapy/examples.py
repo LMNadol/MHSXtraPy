@@ -1,6 +1,39 @@
 import numpy as np
 
 
+def dipole(x: np.float64, y: np.float64) -> np.float64:
+    """
+    Returns value of Dipole-Von Mises distribution at given x and y inspired by Neukirch and Wiegelmann (2019).
+    mu_x1, mu_y1, mu_x2, mu_y2 as well as kappa_x1, kappa_y1, kappa_x2 and kappa_y2 can be changed to adjust positions and radii of sink and source.
+    This is a simple example to test the runtime of the code.
+    """
+
+    xx = np.pi * (x / 10.0 - 1.0)
+    yy = np.pi * (y / 10.0 - 1.0)
+    mu_x1 = 1.2 / np.pi + 1.0
+    mu_y1 = mu_x1
+    mu_x2 = -mu_x1
+    mu_y2 = -mu_y1
+    kappa_x1 = 10.0
+    kappa_y1 = kappa_x1
+    kappa_x2 = kappa_y1
+    kappa_y2 = kappa_x1
+
+    return np.exp(kappa_x1 * np.cos(xx - mu_x1)) / (
+        2.0 * np.pi * np.i0(kappa_x1)
+    ) * np.exp(kappa_y1 * np.cos(yy - mu_y1)) / (
+        2.0 * np.pi * np.i0(kappa_y1)
+    ) - np.exp(
+        kappa_x2 * np.cos(xx - mu_x2)
+    ) / (
+        2.0 * np.pi * np.i0(kappa_x2)
+    ) * np.exp(
+        kappa_y2 * np.cos(yy - mu_y2)
+    ) / (
+        2.0 * np.pi * np.i0(kappa_y2)
+    )
+
+
 def multipole(x: np.float64, y: np.float64) -> np.float64:
     """
     Returns value of Multipole-VonMises distribution at given x and y inspired by Neukirch and Wiegelmann (2019) using a Von Mises distribution.
