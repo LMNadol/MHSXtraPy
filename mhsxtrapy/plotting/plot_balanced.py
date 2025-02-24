@@ -70,8 +70,16 @@ def plot_magnetogram_3D(
 ):
     """
     Create figure of magnetic field line from Field3dData object. Specify angle of view and optional zoom
-    for the side view onto the transition region, which footpoints are chosen for field lines,
-    if and where the figure is supposed to be saved.
+    for the side view onto the transition region, which footpoints are chosen for field lines.
+
+    Args:
+        data (Field3dData): magnetic field data
+        view (Literal[&quot;los&quot;, &quot;side&quot;, &quot;angular&quot;]): which view should be displayed
+        footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
+
+    Raises:
+        ValueError: In case view value is wrong
+        ValueError: In case footpoints value is wrong
     """
 
     xmin, xmax, ymin, ymax, zmin, zmax = (
@@ -165,6 +173,10 @@ def plot_magnetogram_3D(
 def plot_fieldlines_grid(data: Field3dData, ax) -> None:
     """
     Plot field lines on grid.
+
+    Args:
+        data (Field3dData): magnetic field data
+        ax (_type_): previous plotting environment
     """
 
     xmin, xmax, ymin, ymax, zmin, zmax = (
@@ -253,6 +265,12 @@ def plot_fieldlines_grid(data: Field3dData, ax) -> None:
 def detect_footpoints(data: Field3dData) -> Tuple:
     """
     Detenct footpoints around centres of poles on photospheric magentogram.
+
+    Args:
+        data (Field3dData): magnetic field data
+
+    Returns:
+        Tuple: sink and source regions where footpoints will be plotted
     """
 
     sinks = data.bz.copy()
@@ -270,6 +288,12 @@ def detect_footpoints(data: Field3dData) -> Tuple:
 def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray, ax):
     """
     Plot field lines starting at detected foot points around poles.
+
+    Args:
+        data (Field3dData): magnetic field data
+        sinks (np.ndarray): regions of negative flux
+        sources (np.ndarray): regions of positive flux
+        ax (_type_): previous plotting environment
     """
 
     xmin, xmax, ymin, ymax, zmin, zmax = (
@@ -351,6 +375,13 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
 
 
 def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
+    """
+    Plots 2D pressure variation array at height z.
+
+    Args:
+        data (Field3dData): magnetic fiel data
+        z (np.float64): vertical height
+    """
 
     B0 = data.field[:, :, 0, 2].max()
     xmin, xmax, ymin, ymax, zmin, zmax = (
@@ -404,6 +435,13 @@ def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
 
 
 def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
+    """
+    Plots 2D density variation array at height z.
+
+    Args:
+        data (Field3dData): magnetic fiel data
+        z (np.float64): vertical height
+    """
 
     B0 = data.field[:, :, 0, 2].max()
     xmin, xmax, ymin, ymax, zmin, zmax = (

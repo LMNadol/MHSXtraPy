@@ -82,6 +82,9 @@ G_SOLAR = 272.2
 def plot_magnetogram_2D(data: Field2dData) -> None:
     """
     Plot photospheric boundary condition as basis for field line figures.
+
+    Args:
+        data (Field2dData): boundary condition data
     """
 
     fig = plt.figure()
@@ -130,6 +133,12 @@ def plot_magnetogram_2D(data: Field2dData) -> None:
 
 
 def plot_dpressure_z(data: Field3dData) -> None:
+    """
+    Plots vertical variation in pressure at x and y where Bz is maximal on the photosphere.
+
+    Args:
+        data (Field3dData): magnetic field data
+    """
 
     B0 = data.field[:, :, 0, 2].max()
     min_values = np.min(data.dpressure, axis=(0, 1))
@@ -171,6 +180,12 @@ def plot_dpressure_z(data: Field3dData) -> None:
 
 
 def plot_ddensity_z(data: Field3dData) -> None:
+    """
+    Plots vertical variation in density at x and y where Bz is maximal on the photosphere.
+
+    Args:
+        data (Field3dData): magnetic field data
+    """
 
     B0 = data.field[:, :, 0, 2].max()
     min_values = np.min(data.ddensity, axis=(0, 1))
@@ -216,6 +231,15 @@ def plot_magnetogram_3D(
     view: Literal["los", "side", "angular"],
     footpoints: Literal["all", "active-regions"],
 ):
+    """
+    Wrapper function for 3D magentic field plotting.
+
+        Args:
+        data (Field3dData): magnetic field data
+        view (Literal[&quot;los&quot;, &quot;side&quot;, &quot;angular&quot;]): which view should be displayed
+        footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
+    """
+
     if data.flux_balance_state == FluxBalanceState.BALANCED:
 
         plot_magnetogram_3D_balanced(data, view, footpoints)
@@ -226,6 +250,14 @@ def plot_magnetogram_3D(
 
 
 def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
+    """
+    Wrapper function for 2D pressure variation plotting.
+
+    Args:
+        data (Field3dData): magnetic field data
+        z (np.float64): height z at which variation is plotted
+    """
+
     if data.flux_balance_state == FluxBalanceState.BALANCED:
 
         plot_dpressure_xy_balanced(data, z)
@@ -236,6 +268,14 @@ def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
 
 
 def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
+    """
+    Wrapper function for 2D density variation plotting.
+
+    Args:
+        data (Field3dData): magnetic field data
+        z (np.float64): height z at which variation is plotted
+    """
+
     if data.flux_balance_state == FluxBalanceState.BALANCED:
 
         plot_ddensity_xy_balanced(data, z)

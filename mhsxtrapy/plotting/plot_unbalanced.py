@@ -66,11 +66,15 @@ def calculate_tick_count(min_val, max_val, relative_size):
     Calculate optimal tick spacing considering the relative size of this axis
     compared to the largest axis in the plot.
 
-    Parameters:
-    min_val: minimum value of the axis
-    max_val: maximum value of the axis
-    relative_size: length of this axis divided by length of longest axis
+    Args:
+        min_val (_type_): minimum value of the axis
+        max_val (_type_): maximum value of the axis
+        relative_size (_type_): length of this axis divided by length of longest axis
+
+    Returns:
+        _type_: ticks
     """
+
     axis_length = abs(max_val - min_val)
 
     # Base step size on axis length
@@ -107,6 +111,13 @@ def calculate_tick_count(min_val, max_val, relative_size):
 def set_axis_labels(ax, x_length, y_length, z_length):
     """
     Set axis labels with improved positioning for largely different axis lengths
+
+    Args:
+        ax (_type_): previous plotting environment
+        x_length (_type_): length of x-direction array
+        y_length (_type_): length of y-direction array
+        z_length (_type_): length of z-direction array
+
     """
     # Calculate length ratios using log scale to handle large differences
     lengths = np.array([x_length, y_length, z_length])
@@ -147,8 +158,16 @@ def plot_magnetogram_3D(
 ):
     """
     Create figure of magnetic field line from Field3dData object. Specify angle of view and optional zoom
-    for the side view onto the transition region, which footpoints are chosen for field lines,
-    if and where the figure is supposed to be saved.
+    for the side view onto the transition region, which footpoints are chosen for field lines.
+
+    Args:
+        data (Field3dData): magnetic field data
+        view (Literal[&quot;los&quot;, &quot;side&quot;, &quot;angular&quot;]): which view should be displayed
+        footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
+
+    Raises:
+        ValueError: In case view value is wrong
+        ValueError: In case footpoints value is wrong
     """
 
     xmin, xmax, ymin, ymax, zmin, zmax = (
@@ -259,6 +278,10 @@ def plot_magnetogram_3D(
 def plot_fieldlines_grid(data: Field3dData, ax) -> None:
     """
     Plot field lines on grid.
+
+    Args:
+        data (Field3dData): magnetic field data
+        ax (_type_): previous plotting environment
     """
 
     xmin, xmax, ymin, ymax, zmin, zmax = (
@@ -350,6 +373,12 @@ def plot_fieldlines_grid(data: Field3dData, ax) -> None:
 def detect_footpoints(data: Field3dData) -> Tuple:
     """
     Detenct footpoints around centres of poles on photospheric magentogram.
+
+    Args:
+        data (Field3dData): magnetic field data
+
+    Returns:
+        Tuple: sink and source regions where footpoints will be plotted
     """
 
     sinks = data.bz.copy()
@@ -367,6 +396,12 @@ def detect_footpoints(data: Field3dData) -> Tuple:
 def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray, ax):
     """
     Plot field lines starting at detected foot points around poles.
+
+    Args:
+        data (Field3dData): magnetic field data
+        sinks (np.ndarray): regions of negative flux
+        sources (np.ndarray): regions of positive flux
+        ax (_type_): previous plotting environment
     """
 
     xmin, xmax, ymin, ymax, zmin, zmax = (
@@ -451,6 +486,13 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
 
 
 def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
+    """
+    Plots 2D pressure variation array at height z.
+
+    Args:
+        data (Field3dData): magnetic fiel data
+        z (np.float64): vertical height
+    """
 
     B0 = data.field[:, :, 0, 2].max()
     xmin, xmax, ymin, ymax, zmin, zmax = (
@@ -506,6 +548,13 @@ def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
 
 
 def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
+    """
+    Plots 2D density variation array at height z.
+
+    Args:
+        data (Field3dData): magnetic fiel data
+        z (np.float64): vertical height
+    """
 
     B0 = data.field[:, :, 0, 2].max()
     xmin, xmax, ymin, ymax, zmin, zmax = (
