@@ -38,6 +38,16 @@ norm = colors.SymLogNorm(50, vmin=-7.5e2, vmax=7.5e2)
 def find_corners_SDO(
     path: str, ulon: float, llon: float, ulat: float, llat: float
 ) -> None:
+    """
+    Plots SDO magnetogram and cut-out region defined through ulon, llon, ulat and llat.
+
+    Args:
+        path (str): path to .fits file
+        ulon (float): upper longitude
+        llon (float): lower longitude
+        ulat (float): upper latitude
+        llat (float): lower latitude
+    """
 
     hmi_image = sunpy.map.Map(path).rotate()  # type: ignore
     hdr = hmi_image.fits_header
@@ -140,6 +150,16 @@ def find_corners_SDO(
 def find_corners_SolarOrbiter(
     path: str, stx: float, lstx: float, sty: float, lsty: float
 ) -> None:
+    """
+    Plots Solar Orbiter magnetogram and cut-out region defined through ulon, llon, ulat and llat.
+
+    Args:
+        path (str): path to .fits file
+        stx (float): start index x-direction
+        lstx (float): last index x-direction
+        sty (float): start index y-direction
+        lsty (float): last index y-direction
+    """
 
     bz = getdata(path, ext=False)
     sub_bz = bz[sty:lsty, stx:lstx]  # type: ignore
