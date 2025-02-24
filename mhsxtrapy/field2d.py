@@ -31,6 +31,9 @@ class Field2dData:
     bz          :   Bottom boundary magentogram of size (ny, nx,). Indexing of vectors done in this order,
                     such that, following intuition, x-direction corresponds to latitudinal extension and
                     y-direction to longitudinal extension of the magnetic field.
+
+    Returns:
+        _type_: Field2dData object
     """
 
     nx: int
@@ -48,13 +51,13 @@ class Field2dData:
     flux_balance_state: FluxBalanceState
 
     @classmethod
-    def from_fits_SolarOrbiter(cls, path, stx, lstx, sty, lsty):
+    def from_fits_SolarOrbiter(
+        cls, path: str, stx: int, lstx: int, sty: int, lsty: int
+    ):
         """
         Creates dataclass of type Field2dData from SolarOrbiter Archive data in .fits format.
-        Only needs to be handed path to file and the creates Field2dData for extrapolation to 20 Mm
-        (can be adjusted by hand). Most SolarOrbiter images need to be cut for extraplation of a
-        certain active region. No straightforward method to automate this process through user input
-        has been found yet, therefore size of the magnetogram needs to be adjusted by hand by the user.
+        Only needs to be handed path to file and the indices one wants to use to cut the region to size,
+        then creates Field2dData for extrapolation to 20 Mm.
 
         Steps:
         (1)     From the file given at path read in the image and header data refarding the distance to
@@ -64,6 +67,16 @@ class Field2dData:
         (4)     Choose nz, pz and zmax.
         (5)     Determine x, y, z.
         (6)     Write all into Field2dData object.
+
+        Args:
+            path (str): path to .fits file
+            stx (int): start index x-direction
+            lstx (int): last index x-direction
+            sty (int): start index y-direction
+            lsty (int): last index y-direction
+
+        Returns:
+            _type_: Field2dData object
         """
 
         with astroopen(path) as data:  # type: ignore
@@ -145,19 +158,27 @@ class Field2dData:
     ):
         """
         Creates dataclass of type Field2dData from SDO HMI data in .fits format.
-        Only needs to be handed path to file and the creates Field2dData for extrapolation to 20 Mm
-        (can be adjusted by hand). Most HMI images need to be cut for extraplation of a certain active
-        region. No straightforward method to automate this process through user input has been found yet,
-        therefore size of the magnetogram needs to be adjusted by hand by the user.
+        Only needs to be handed path to file and longitudes and latitutes of desired cut out,
+        then creates Field2dData for extrapolation to 20 Mm.
 
         Steps:
         (1)     From the file given at path read in the image and header data refarding the distance to
                 the sun, pixel unit and pixel size in arcsec.
-        (2)     Cut image to specific size [sty:lsty, stx:lstx] around feature under investigation.
+        (2)     Cut image to specific size round feature under investigation.
         (3)     Determine nx, ny, nf, px, py, xmax, ymax from data.
         (4)     Choose nz, pz and zmax.
         (5)     Determine x, y, z.
         (6)     Write all into Field2dData object.
+
+        Args:
+            path (str): path to .fits file
+            ulon (float): upper longitude
+            llon (float): lower longitude
+            ulat (float): upper latitute
+            llat (float): lower latitute
+
+        Returns:
+            _type_: _description_
         """
 
         hmi_image = sunpy.map.Map(path).rotate()  # type: ignore
@@ -244,22 +265,28 @@ class Field2dData:
             )
 
 
-def check_fluxbalance(bz: np.ndarray) -> float:
-    """
+"""
     Summation of flux through the bottom boundary (photospheric Bz) normalised
     by the sum of absolute values. Value between -1 and 1, corresponding to entirely
     outward and inward flux, respectively. Can (probably) consider values between
     -0.01 and 0.01 as flux-balanced, such that the application of Seehafer is not
     necessary.
-    """
+"""
+
+
+def check_fluxbalance(bz: np.ndarray) -> float:
+
     return np.sum(bz) / np.sum(np.fabs(bz))
 
 
-def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
-    """
+"""
     "Optimal" alpha calculated according to Hagino and Sakurai (2004).
     Alpha is calculated from the vertical electric current in the photosphere
     (from horizontal photospheric field) and the photospheric vertical magnetic field.
-    """
+"""
+
+
+def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
+
     Jz = np.gradient(by, axis=1) - np.gradient(bx, axis=0)
     return np.sum(Jz * np.sign(bz)) / np.sum(np.fabs(bz))
