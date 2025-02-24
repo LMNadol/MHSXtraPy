@@ -55,6 +55,13 @@ class Field3dData:
     tanh        :   Boolean paramter determining if Low or N+W/N+W-A height profile is used for calculation
                     of plasma pressure, plasma density, current density and Lorentz force.
     ------------------------------------------------------------------------------------------------------
+
+    Raises:
+        ValueError: In case flux_balance has wrong value
+        ValueError: In case solution and parameter choices do not agree
+
+    Returns:
+        _type_: Field3dData object
     """
 
     nx: int
@@ -112,6 +119,9 @@ class Field3dData:
         calculated as coefficients for the hyperbolic tangent temperature profile. Current values:
         T_PHOTOSPHERE = 5600.0 Kelvin
         T_CORONA = 2.0 * 10.0**6 Kelvin
+
+        Returns:
+            np.ndarray: vertical background temperature profile
         """
 
         assert self.z0 is not None and self.deltaz is not None
@@ -130,6 +140,9 @@ class Field3dData:
         Gives background pressure height profile normalised to 1 on the photosphere.
         Need to multiply by BETA0 / 2.0 to normalise to same scale as dpressure. Need to
         then multiply additionally by (B0 * 10**-4) ** 2.0 / MU0 to get into kg/(s^2m).
+
+        Returns:
+            np.ndarray: vertical background pressure profile
         """
 
         assert self.z0 is not None and self.deltaz is not None
@@ -168,6 +181,9 @@ class Field3dData:
         density height profile normalised to 1 on the photosphere. Need to multiply by
         BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE to normalise to same scale as ddensity. Need to then
         multiply additionally by (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L) to get into kg/(m^3).
+
+        Returns:
+            np.ndarray: vertical background density profile
         """
 
         assert self.z0 is not None and self.deltaz is not None
@@ -190,6 +206,13 @@ class Field3dData:
         """
         Calculate variation in pressure described by equation (30) in Neukirch and Wiegelmann (2019).
         Normalised to same scale as BETA0 / 2.0 * bpressure (see L Nadol PhD thesis for details).
+
+        Raises:
+            ValueError: In case flux_balance has wrong value
+            ValueError: In case solution and parameter choices do not agree
+
+        Returns:
+            np.ndarray: 3D variation in pressure
         """
 
         if self.flux_balance_state == FluxBalanceState.BALANCED:
@@ -240,6 +263,13 @@ class Field3dData:
         Calculate variation in pressure described by equation (31) in Neukirch and Wiegelmann (2019).
         Normalised to same scale as BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bdensity (see L Nadol
         PhD thesis for details).
+
+        Raises:
+            ValueError: In case flux_balance has wrong value
+            ValueError: In case solution and parameter choices do not agree
+
+        Returns:
+            np.ndarray: 3D variation in density
         """
 
         if self.flux_balance_state == FluxBalanceState.BALANCED:
@@ -307,6 +337,9 @@ class Field3dData:
         """
         Returns full pressure described by equation (14) in Neukirch and Wiegelmann (2019) in
         normalised scale. Multiply by (B0 * 10**-4) ** 2.0 / MU0 to get into kg/(s^2m).
+
+        Returns:
+            np.ndarray: full 3D pressure, sum of background and variation
         """
 
         bp_matrix = np.zeros_like(self.dpressure)
@@ -328,6 +361,9 @@ class Field3dData:
         Returns full density described by equation (15) in Neukirch and Wiegelmann (2019) in
         normalised scale. Multiply by (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L) to get
         into kg/(m^3).
+
+        Returns:
+            np.ndarray: full 3D density, sum of background and variation
         """
 
         assert self.z0 is not None and self.deltaz is not None and self.b is not None
@@ -355,6 +391,9 @@ class Field3dData:
     def j3D(self) -> np.ndarray:
         """
         Calculate current density at all grid points. For details see function j3d below.
+
+        Returns:
+            np.ndarray: 3D current density
         """
 
         return j3d(self)
@@ -363,6 +402,9 @@ class Field3dData:
     def lf3D(self) -> np.ndarray:
         """
         Calculate Lorentz force at all grid points. For details see function lf3d below.
+
+        Returns:
+            np.ndarray: 3D Lorentz force
         """
 
         return lf3d(self)
@@ -379,7 +421,21 @@ def calculate_magfield(
     kappa: float | None = None,
 ) -> Field3dData:
     """
-    Create Field3dData object from Field2dData object and choosen paramters using mhsflex.b3d.b3d.
+    Create Field3dData object from Field2dData object and choosen paramters using mhsxtrapy.b3d.b3d.
+
+    Args:
+        field2d (Field2dData): boundary condition
+        alpha (float): force-free parameter
+        a (float): amplitude parameter
+        which_solution (WhichSolution): Enum to decide which solution to use, Low (1992), Neukirch and Wiegelmann (2019) or
+            Nadol and Neukirch (2025)
+        b (float | None, optional): Switch-off parameter for NW and NN solution. Defaults to None.
+        z0 (float | None, optional): Centre of region over which transition from non-force-free to force-free takes place. Defaults to None.
+        deltaz (float | None, optional): Width of region over which transition from non-force-free to force-free takes place. Defaults to None.
+        kappa (float | None, optional): Drop-off parameter for Low solution. Defaults to None.
+
+    Returns:
+        Field3dData: Field3dData object
     """
 
     mf3d, dbz3d = b3d(field2d, alpha, a, which_solution, b, z0, deltaz, kappa)
@@ -415,6 +471,17 @@ def btemp_linear(
     Return background temperature by height in Kelvin using linear interpolation between
     given temperatures (temps) at given heights (heights). temps and heights must be arrays
     of the same length.
+
+    Args:
+        field3d (Field3dData): 3D magnetic field data
+        heights (np.ndarray): array of given heights at which interpolation takes place
+        temps (np.ndarray): array of given temperature between which is interpolated, same length as heights
+
+    Raises:
+        ValueError: In case lengths of heights and temps do not match
+
+    Returns:
+        np.ndarray: 1D vertical background temperature profile
     """
 
     temp = np.zeros_like(field3d.z)
@@ -445,7 +512,21 @@ def bpressure_linear(
     Gives background pressure height profile normalised to 1 on the photosphere.
     Need to multiply by BETA0 / 2.0 to normalise to same scale as dpressure. Need to
     then multiply additionally by (B0 * 10**-4) ** 2.0 / MU0 to get into kg/(s^2m).
+
+    Args:
+        field3d (Field3dData): 3D magnetic field data
+        heights (np.ndarray): array of given heights at which interpolation takes place
+        temps (np.ndarray): array of given temperature between which is interpolated, same length as heights
+
+    Raises:
+        ValueError: In case lengths of heights and temps do not match
+
+    Returns:
+        np.ndarray: 1D vertical background pressure profile
     """
+
+    if len(heights) != len(temps):
+        raise ValueError("Number of heights and temperatures do not match")
 
     T0 = 0
 
@@ -494,7 +575,21 @@ def bdensity_linear(
     density height profile normalised to 1 on the photosphere. Need to multiply by
     BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE to normalise to same scale as ddensity. Need to then
     multiply additionally by (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L) to get into kg/(m^3).
+
+    Args:
+        field3d (Field3dData): 3D magnetic field data
+        heights (np.ndarray): array of given heights at which interpolation takes place
+        temps (np.ndarray): array of given temperature between which is interpolated, same length as heights
+
+    Raises:
+        ValueError: In case lengths of heights and temps do not match
+
+    Returns:
+        np.ndarray: 1D vertical background density profile
     """
+
+    if len(heights) != len(temps):
+        raise ValueError("Number of heights and temperatures do not match")
 
     temp0 = temps[0]
     dummypres = bpressure_linear(field3d, heights, temps)
@@ -510,6 +605,14 @@ def fpressure_linear(
     Returns full pressure in kg/(s^2m) described by equation (14) in Neukirch and Wiegelmann (2019)
     from linear interpolated background temperature. Multiply by (B0 * 10**-4) ** 2.0 / MU0 to get
     in normalised scale as dpressure.
+
+    Args:
+        field3d (Field3dData): 3D magnetic field data
+        heights (np.ndarray): array of given heights at which interpolation takes place
+        temps (np.ndarray): array of given temperature between which is interpolated, same length as heights
+
+    Returns:
+        np.ndarray: 3D full pressure, sum of background and variation
     """
 
     bp_matrix = np.zeros_like(field3d.dpressure)
@@ -531,6 +634,14 @@ def fdensity_linear(
     Returns full density in kg/(m^3) described by equation (15) in Neukirch and Wiegelmann (2019)
     resulting from linearly interpolated background temperature. Divide by
     (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L) to get in normalised scale as ddensity.
+
+    Args:
+        field3d (Field3dData): 3D magnetic field data
+        heights (np.ndarray): array of given heights at which interpolation takes place
+        temps (np.ndarray): array of given temperature between which is interpolated, same length as heights
+
+    Returns:
+        np.ndarray: 3D full density, sum of background and variation
     """
 
     T0 = 0
@@ -560,6 +671,15 @@ def j3d(field3d: Field3dData) -> np.ndarray:
     """
     Returns current density, calucated from magnetic field as j = (alpha B + curl(0,0,f(z)Bz))/ mu0.
     In A/m^2.
+
+    Args:
+        field3d (Field3dData): magnetic field data
+
+    Raises:
+        ValueError: In case solution and parameter choices do not match
+
+    Returns:
+        np.ndarray: current density
     """
 
     j = np.zeros_like(field3d.field)
@@ -609,6 +729,12 @@ def lf3d(field3d: Field3dData) -> np.ndarray:
     """
     Returns Lorentz force calculated from j x B.
     In kg/sm^2.
+
+    Args:
+        field3d (Field3dData): magnetic field data
+
+    Returns:
+        np.ndarray: 3D Lorentz force
     """
 
     j = field3d.j3D
