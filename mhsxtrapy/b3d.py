@@ -20,13 +20,18 @@ def seehafer(
     bz: np.ndarray,
 ) -> np.ndarray:
     """
-    Given the photospheric z-component of the magnetic field (field) returns Seehafer-mirrored
+    Given the photospheric z-component of the magnetic field returns Seehafer-mirrored
     field vector four times the size of original vector, (ny, nx,). Creates odd Seehafer-extension
     according to
         Bz(-x,y,0) = -Bz(x,y,0)
         Bz(x,-y,0) = -Bz(x,y,0)
         Bz(-x,-y,0) = Bz(x,y,0)
-    Returns array of size (2ny, 2nx,)
+
+    Args:
+        bz (np.ndarray): photospheric z-component of the magnetic field of size (ny, nx,)
+
+    Returns:
+        np.ndarray: Seehafer-mirrored photospheric magnetic field vector of size (2ny, 2nx,)
     """
 
     ny, nx = bz.shape
@@ -46,14 +51,21 @@ def xnm(
     nf: int,
 ) -> Tuple:
     """
-    Given the Seehafer-mirrored photospheric vertical component of the magnetic field (data_bz) returns
-    coefficients anm for series expansion of the 3D magnetic field (for definition of anm
-    see PhD thesis of L Nadol) using nf_max-many Fourier modes in each direction.
+    Given the Seehafer-mirrored photospheric vertical component of the magnetic field returns
+    coefficients anm, bnm, cnm, dnm for series expansion of the 3D magnetic field (for definition of anm
+    see PhD thesis of L Nadol) using nf-many Fourier modes in each direction.
 
     Calculates FFT coefficients using np.fft and shifts zeroth frequency into the centre of the
     array (exact position dependent on if nx and ny are even or odd). Then the coefficients anm
     are calcualted from a combination of real parts of FFT coefficients according to L Nadol PhD
-    thesis. Returns array of size (nf_max, nf_max,).
+    thesis. Returns arrays of size (nf, nf).
+
+    Args:
+        bz (np.ndarray): Seehafer-mirrored photospheric vertical component of the magnetic field
+        nf (int): number of Fourier modes in each horizontal direction
+
+    Returns:
+        Tuple: coefficient arrays anm, bnm, cnm, dnm, each of size (nf, nf,)
     """
 
     anm = np.zeros((nf, nf))
@@ -144,13 +156,29 @@ def get_phi_dphi(
     kappa: float | None = None,
 ):
     """
-    Returns two arrays of size (nf, nf, nz,) of the values of the functions Phi and
-    its z-derivative for either Low, N+W or N+W-A, depending on the values of
-    asymptotic and tanh: (True, True) = N+W-A, (False, True) = N+W, (False, False) = Low,
-    (True, False) does not exist.
+    Returns two arrays of size (nf, nf, nz,) of the values of the functions bar-Phi and
+    its z-derivative for either Low, N+W or N+W-A, depending on the value of the Enum solution.
+
+    Args:
+        z_arr (np.ndarray): grid points in vertical direction of computational box, in lengthscale L
+        q_arr (np.ndarray): array containing the parameter q, i.e. delta in L Nadol PhD thesis
+        p_arr (np.ndarray): array containing the parameter p, i.e. gamma in L Nadol PhD thesis
+        nf (int): number of Fourier modes in both horizontal directions
+        nz (int): number of grid points in vertical direction
+        solution (WhichSolution): Enum for solution selection, either "Low", "Neuwie" or "Asymp"
+        z0 (float | None, optional): Centre of region over which transition from non-force-free to force-free
+            takes place in "Neuwie" and "Asymp" solution. Defaults to None.
+        deltaz (float | None, optional): Width of region over which transition from non-force-free to force-free
+            takes place in "Neuwie" and "Asymp". Defaults to None.
+        kappa (float | None, optional): Parameter for "Low" solution setting the speed with which the
+            exponential function declines. Defaults to None.
+
+    Raises:
+        ValueError: In case the parameter choices for z0, deltza and kappa do not fit with the choice of solution.
+
+    Returns:
+        _type_: Arrays containig bar-Phi and its first derivative w.r.t. z.
     """
-    # if use_asymptotic and not use_tanh:
-    #     return ValueError("Cannot use asymptotic solution of Low (1991, 1992).")
 
     phi_arr = np.zeros((nf, nf, nz))
     dphidz_arr = np.zeros((nf, nf, nz))
@@ -204,11 +232,31 @@ def b3d(
     """
     Calculate 3D magnetic field from Field2dData and given paramters a, b, alpha, z0 and delta z
     (for definitions see PhD thesis L Nadol). Extrapolation based on either Low, N+W or N+W-A
-    solution depending on the values of asymptotic and tanh: (True, True) = N+W-A,
-    (False, True) = N+W, (False, False) = Low, (True, False) does not exist.
+    solution depending on the value of solution.
 
     Returns a tuple of two arrays of size (ny, nx, nz, 3,), of which the first one contains By, Bx
     and Bz and the second one contains partial derivatives of Bz (dBzdy, dBzdx and dBzdz).
+
+    Args:
+        field (Field2dData): Field2dData object containing all the boundary condition information
+        alpha (float): force-free parameter
+        a (float): amplitude parameter
+        solution (WhichSolution): Enum for solution selection, either "Low", "Neuwie" or "Asymp"
+        b (float | None, optional): "switch-off" parameter
+        z0 (float | None, optional): Centre of region over which transition from non-force-free to force-free
+            takes place in "Neuwie" and "Asymp" solution. Defaults to None.
+        deltaz (float | None, optional): Width of region over which transition from non-force-free to force-free
+            takes place in "Neuwie" and "Asymp". Defaults to None.
+        kappa (float | None, optional): Parameter for "Low" solution setting the speed with which the
+            exponential function declines. Defaults to None.
+
+    Raises:
+        ValueError: In case the Enum fluxbalance is neither BALANCED nor UNBALANCED.
+        ValueError: In case the parameter choices for z0, deltza and kappa do not fit with the choice of solution.
+
+    Returns:
+        Tuple: a tuple of two arrays of size (ny, nx, nz, 3,), of which the first one contains By, Bx
+            and Bz and the second one contains partial derivatives of Bz (dBzdy, dBzdx and dBzdz).
     """
 
     if field.flux_balance_state == FluxBalanceState.BALANCED:
