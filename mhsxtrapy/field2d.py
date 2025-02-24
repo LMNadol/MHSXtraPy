@@ -265,28 +265,36 @@ class Field2dData:
             )
 
 
-"""
+def check_fluxbalance(bz: np.ndarray) -> float:
+    """
     Summation of flux through the bottom boundary (photospheric Bz) normalised
     by the sum of absolute values. Value between -1 and 1, corresponding to entirely
     outward and inward flux, respectively. Can (probably) consider values between
     -0.01 and 0.01 as flux-balanced, such that the application of Seehafer is not
     necessary.
-"""
 
+    Args:
+        bz (np.ndarray): 2D photospheric vertical magnetogram of size (ny, nx,)
 
-def check_fluxbalance(bz: np.ndarray) -> float:
-
+    Returns:
+        float: summation of flux through bz
+    """
     return np.sum(bz) / np.sum(np.fabs(bz))
 
 
-"""
+def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
+    """
     "Optimal" alpha calculated according to Hagino and Sakurai (2004).
     Alpha is calculated from the vertical electric current in the photosphere
     (from horizontal photospheric field) and the photospheric vertical magnetic field.
-"""
 
+    Args:
+        bx (np.ndarray): 2D photospheric x-directed horizontal magnetogram of size (ny, nx,)
+        by (np.ndarray): 2D photospheric x-directed horizontal magnetogram of size (ny, nx,)
+        bz (np.ndarray): 2D photospheric vertical magnetogram of size (ny, nx,)
 
-def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
-
+    Returns:
+        float: alpha
+    """
     Jz = np.gradient(by, axis=1) - np.gradient(bx, axis=0)
     return np.sum(Jz * np.sign(bz)) / np.sum(np.fabs(bz))
