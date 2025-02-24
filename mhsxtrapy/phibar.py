@@ -12,7 +12,7 @@ def phi(
     q: np.ndarray,
     z0: float,
     deltaz: float,
-):
+) -> np.ndarray:
     """
     Returns solution of asymptotic approximated version of ODE (22)
     in Neukirch and Wiegelmann (2019) which defines the poloidal component
@@ -22,6 +22,16 @@ def phi(
     Vectorisation possible for p and q, which have to be passed as arrays of the
     same size. Vectorisation for z not possible due to differentiation between
     z < z0 and z > z0. Returns array of size p.shape = q.shape which is (nf, nf,).
+
+    Args:
+        z (np.float64): grid points in vertical direction
+        p (np.ndarray): array containing parameter p
+        q (np.ndarray): array containing parameter q
+        z0 (float): centre of region over which transition from non-force-free to force-free takes place
+        deltaz (float): width of region over which transition from non-force-free to force-free takes place
+
+    Returns:
+        np.ndarray: bar-phi according to Nadol and Neukirch (2025)
     """
 
     rplus = p / deltaz
@@ -48,7 +58,7 @@ def dphidz(
     q: np.ndarray,
     z0: float,
     deltaz: float,
-) -> np.ndarray[np.float64, np.dtype[np.float64]]:
+) -> np.ndarray:
     """
     Returns z-derivative of solution of asymptotic approximated version of ODE (22)
     in Neukirch and Wiegelmann (2019) which defines the poloidal component
@@ -58,6 +68,16 @@ def dphidz(
     Vectorisation possible for p and q, which have to be passed as arrays of the
     same size. Vectorisation for z not possible due to differentiation between
     z < z0 and z > z0. Returns array of size (nf, nf, nz,) whereas p.shape = q.shape = (nf, nf,).
+
+    Args:
+        z (np.float64): grid points in vertical direction
+        p (np.ndarray): array containing parameter p
+        q (np.ndarray): array containing parameter q
+        z0 (float): centre of region over which transition from non-force-free to force-free takes place
+        deltaz (float): width of region over which transition from non-force-free to force-free takes place
+
+    Returns:
+        np.ndarray: z-derivative of bar-phi according to Nadol and Neukirch (2025)
     """
 
     rplus = p / deltaz
@@ -93,6 +113,15 @@ def phi_low(z: np.float64, p: np.float64, q: np.float64, kappa: float) -> np.flo
     Vectorisation should be possible for z, p and q, of which p and q have to be
     passed as arrays of the same size. Returns array of size (nf, nf, nz,) whereas
     p.shape = q.shape = (nf, nf,).
+
+    Args:
+        z (np.float64): grid points in vertical direction
+        p (np.ndarray): array containing parameter p
+        q (np.ndarray): array containing parameter q
+        kappa (float): drop-off parameter
+
+    Returns:
+        np.float64: bar-phi according to Low (1991, 1992)
     """
 
     return jv(p, q * np.exp(-z * kappa / 2.0)) / jv(p, q)
@@ -108,6 +137,15 @@ def dphidz_low(z: np.float64, p: np.float64, q: np.float64, kappa: float) -> np.
     Vectorisation should be possible for z, p and q, of which p and q have to be
     passed as arrays of the same size. Returns array of size (nf, nf, nz,) whereas
     p.shape = q.shape = (nf, nf,).
+
+    Args:
+        z (np.float64): grid points in vertical direction
+        p (np.ndarray): array containing parameter p
+        q (np.ndarray): array containing parameter q
+        kappa (float): drop-off parameter
+
+    Returns:
+        np.float64: z-derivative of bar-phi according to Low (1991, 1992)
     """
 
     return (
@@ -127,8 +165,18 @@ def phi_nw(
     q: np.ndarray[np.float64, np.dtype[np.float64]],
     z0: float,
     deltaz: float,
-):
+) -> np.float64:
+    """
+    Args:
+        z (np.float64): grid points in vertical direction
+        p (np.ndarray): array containing parameter p
+        q (np.ndarray): array containing parameter q
+        z0 (float): centre of region over which transition from non-force-free to force-free takes place
+        deltaz (float): width of region over which transition from non-force-free to force-free takes place
 
+    Returns:
+        np.float64: bar-phi according to Neukirch and Wiegelmann (2019)
+    """
     w = (z - z0) / deltaz
     eta_d = 1.0 / (1.0 + np.exp(2.0 * w))
     phi = eta_d**q * (1 - eta_d) ** p * hyp2f1(p + q + 1, p + q, 2 * q + 1, eta_d)
@@ -147,7 +195,19 @@ def dphidz_nw(
     q: np.ndarray[np.float64, np.dtype[np.float64]],
     z0: float,
     deltaz: float,
-):
+) -> np.float64:
+    """
+    Args:
+        z (np.float64): grid points in vertical direction
+        p (np.ndarray): array containing parameter p
+        q (np.ndarray): array containing parameter q
+        z0 (float): centre of region over which transition from non-force-free to force-free takes place
+        deltaz (float): width of region over which transition from non-force-free to force-free takes place
+
+    Returns:
+        np.float64: z-derivative of bar-phi according to Neukirch and Wiegelmann (2019)
+    """
+
     w = (z - z0) / deltaz
     eta_d = 1.0 / (1.0 + np.exp(2.0 * w))
 
