@@ -161,8 +161,8 @@ def dphidz_low(z: np.float64, p: np.float64, q: np.float64, kappa: float) -> np.
 # @njit
 def phi_nw(
     z: np.float64,
-    p: np.ndarray[np.float64, np.dtype[np.float64]],
-    q: np.ndarray[np.float64, np.dtype[np.float64]],
+    p: np.ndarray,
+    q: np.ndarray,
     z0: float,
     deltaz: float,
 ) -> np.float64:

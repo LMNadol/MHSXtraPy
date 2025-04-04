@@ -5,8 +5,10 @@ import os
 from typing import Literal, Tuple
 
 import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib import colors, rc
+import matplotlib.patches as mpatches
+import numpy as np
+from scipy.ndimage import maximum_filter, minimum_filter, label, find_objects
 
 from mhsxtrapy.field2d import Field2dData
 from mhsxtrapy.field3d import Field3dData, FluxBalanceState
@@ -283,3 +285,175 @@ def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
     elif data.flux_balance_state == FluxBalanceState.UNBALANCED:
 
         plot_ddensity_xy_unbalanced(data, z)
+
+
+def find_center(data: Field3dData) -> Tuple:
+    """
+    Find centres of poles on photospheric magentogram.
+    """
+
+    xmin, xmax, ymin, ymax, zmin, zmax = (
+        data.x[0],
+        data.x[-1],
+        data.y[0],
+        data.y[-1],
+        data.z[0],
+        data.z[-1],
+    )
+
+    neighborhood_size = data.nx / 1.0
+    threshold = 1.0
+
+    data_max = maximum_filter(data.bz, neighborhood_size)  # mode ='reflect'
+    maxima = data.bz == data_max
+    data_min = minimum_filter(data.bz, neighborhood_size)
+    minima = data.bz == data_min
+
+    diff = (data_max - data_min) > threshold
+    maxima[diff == 0] = 0
+    minima[diff == 0] = 0
+
+    labeled_sources, num_objects_sources = label(maxima)
+    slices_sources = find_objects(labeled_sources)
+    x_sources, y_sources = [], []
+
+    labeled_sinks, num_objects_sinks = label(minima)
+    slices_sinks = find_objects(labeled_sinks)
+    x_sinks, y_sinks = [], []
+
+    for dy, dx in slices_sources:
+        x_center = (dx.start + dx.stop - 1) / 2
+        x_sources.append(x_center / (data.nx / xmax))
+        y_center = (dy.start + dy.stop - 1) / 2
+        y_sources.append(y_center / (data.ny / ymax))
+
+    for dy, dx in slices_sinks:
+        x_center = (dx.start + dx.stop - 1) / 2
+        x_sinks.append(x_center / (data.nx / xmax))
+        y_center = (dy.start + dy.stop - 1) / 2
+        y_sinks.append(y_center / (data.ny / ymax))
+
+    return x_sources, y_sources, x_sinks, y_sinks
+
+
+def show_poles(data: Field3dData):
+    """
+    Show centres of poles on photospheric magentogram.
+    """
+
+    x_plot = np.outer(data.y, np.ones(data.nx))
+    y_plot = np.outer(data.x, np.ones(data.ny)).T
+
+    xmin, xmax, ymin, ymax, zmin, zmax = (
+        data.x[0],
+        data.x[-1],
+        data.y[0],
+        data.y[-1],
+        data.z[0],
+        data.z[-1],
+    )
+
+    x_sources, y_sources, x_sinks, y_sinks = find_center(data)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    # ax.grid(color="white", linestyle="dotted", linewidth=0.5)
+    ax.contourf(y_plot, x_plot, data.bz, 1000, cmap=cmap)  # , norm=norm)
+    ax.set_xlabel(r"$x/L$")
+    ax.set_ylabel(r"$y/L$")
+    plt.tick_params(direction="in", length=2, width=0.5)
+    ax.set_box_aspect(ymax / xmax)
+
+    for i in range(0, len(x_sinks)):
+
+        xx = x_sinks[i]
+        yy = y_sinks[i]
+        ax.scatter(xx, yy, marker="x", color="yellow")
+
+    for i in range(0, len(x_sources)):
+
+        xx = x_sources[i]
+        yy = y_sources[i]
+        ax.scatter(xx, yy, marker="x", color="blue")
+
+    sinks_label = mpatches.Patch(
+        color="yellow",
+        label="Sinks",
+    )
+    sources_label = mpatches.Patch(color="blue", label="Sources")
+
+    plt.legend(handles=[sinks_label, sources_label], frameon=False, fontsize=12)
+    plt.show()
+
+
+def detect_footpoints(data: Field3dData) -> Tuple:
+    """
+    Detenct footpoints around centres of poles on photospheric magentogram.
+    """
+
+    sinks = data.bz.copy()
+    sources = data.bz.copy()
+
+    maxmask = sources < sources.max() * 0.4
+    sources[maxmask != 0] = 0
+
+    minmask = sinks < sinks.min() * 0.4
+    sinks[minmask == 0] = 0
+
+    return sinks, sources
+
+
+def show_footpoints(data: Field3dData) -> None:
+    """
+    Show footpoints around centres of poles on photospheric magentogram.
+    """
+
+    sinks, sources = detect_footpoints(data)
+
+    xmin, xmax, ymin, ymax, zmin, zmax = (
+        data.x[0],
+        data.x[-1],
+        data.y[0],
+        data.y[-1],
+        data.z[0],
+        data.z[-1],
+    )
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.contourf(
+        np.outer(data.x, np.ones(data.ny)).T,
+        np.outer(data.y, np.ones(data.nx)),
+        data.bz,
+        1000,
+        cmap=cmap_magneto,
+        # norm=norm,
+    )
+    ax.set_xlabel(r"$x/L$")
+    ax.set_ylabel(r"$y/L$")
+    plt.tick_params(direction="in", length=2, width=0.5)
+    ax.set_box_aspect(ymax / xmax)
+
+    for ix in range(0, data.nx, int(data.nx / 25)):
+        for iy in range(0, data.ny, int(data.ny / 25)):
+            if sources[iy, ix] != 0:
+                ax.scatter(
+                    ix / (data.nx / xmax),
+                    iy / (data.ny / ymax),
+                    color=c2,
+                    s=2.0,
+                )
+
+            if sinks[iy, ix] != 0:
+                ax.scatter(
+                    ix / (data.nx / xmax),
+                    iy / (data.ny / ymax),
+                    color=c9,
+                    s=2.0,
+                )
+
+    sinks_label = mpatches.Patch(color=c9, label="Sinks")
+    sources_label = mpatches.Patch(color=c2, label="Sources")
+
+    plt.legend(handles=[sinks_label, sources_label], frameon=False, fontsize=12)
+    plt.show()
