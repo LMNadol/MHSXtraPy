@@ -1,36 +1,25 @@
 # MHSXtraPy
 
-MHSXtraPy is a set of Python codes for three-dimensional magnetohydrostatic (MHS) extrapolation from a given two-dimensional array, intended for the extrapolation of magnetic fields observed on the solar photosphere.
+MHSXtraPy is a set of Python codes for three-dimensional linear magnetohydrostatic (MHS) extrapolation from a given two-dimensional array, intended for the extrapolation of magnetic fields observed on the solar photosphere.
 
-L. Nadol 2025-02-11
-
-An overview of the codes is provided in the following publication:
-
-Nadol, L., Neukirch, T. (2025).
-MHSXtraPy - A set of codes for three-dimensional magnetohydrostatic solar magnetic field extrapolation,
-RAS Techniques and Instruments,
-https://doi.org/etc/etc/etc
+L. Nadol 2025-05-01
 
 An overview of the underlying theory is provided in the following publication:
 
 Nadol, L., Neukirch, T. (2025).
 An efficient method for magnetic field extrapolation based on a family of analytical three-dimensional magnetohydrostatic equilibria,
-Solar Physics,
-https://doi.org/etc/etc/etc
+Accepted and soon published by Solar Physics,
+https://doi.org/10.48550/arXiv.2504.16619 
 
-Between October 2020 and March 2025, I was studying at the School of Mathematics and Statistics at the University of St Andrews, UK, as a PhD student within the Solar and Magnetospheric Theory Group supervised by Prof Thomas Neukirch. In this time, I collected and documented a set of codes for local 3D MHS magnetic field extrapolation in Cartesian geometry.
+An overview of the codes will be provided in a subsequent publication intended for the journal Royal Astronmical Society Techniques and Instruments.
 
-In this repository, I present the resulting Python library. On the one hand, there may be limited interest in the codes given the linear nature of their mathematical description and given that non-linear solutions regularly outperform such (Wiegelmann & Sakurai, 2021) when it comes to agreement with observations (Pevtsov et al., 1994, DeRosa et al., 2009). On the other hand, the codes work efficiently and the method incorporates the non force-free lower chromosphere and photosphere, which other popular methods fail to do as they rely on the assumption of a force-free solar atmosphere throughout. I am not aware of any alternative open-source codes that extrapolate in an MHS manner. 
-
-A .pdf file will be added in the near future with detailed information on the codes and their performance, which will be based on a chapter from my PhD thesis. This will be uploaded and this README updated once the final version of my thesis is submitted (apporox. May 2025).
-
-In the following a condensed version of this information is provided, based on the mentioned chapter in my PhD thesis. 
+In this repository, I present a Python code for local linear 3D MHS magnetic field extrapolation in Cartesian geometry developed during December 2022 and March 2025. On the one hand, there may be limited interest in the code given the linear nature of their mathematical description and given that non-linear solutions regularly outperform such (Wiegelmann & Sakurai, 2021) when it comes to agreement with observations (Pevtsov et al., 1994, DeRosa et al., 2009). On the other hand, the code works efficiently and the method incorporates the non force-free lower chromosphere and photosphere, which other popular methods fail to do as they rely on the assumption of a force-free solar atmosphere throughout.
 
 ## Details
 
-MHSXtraPy is used for the calculation of solar MHS magnetic fields in Cartesian coordinates, in which the $x$- and $y$-directions are the latitudinal and longitudinal extent of the boundary condition and the $z$-direction dictates the height above the photosphere perpendicular to the orientation of the boundary condition. The code was written in Python, as Python is a widely used language and provides an ecosystem of libraries useful for our purposes. As of now, MHSXtraPy allows for the extrapolation of the magnetic vector field above a photospheric boundary condition obtained from either a manually defined array or from line-of-sight magnetograms observed by either the Polarimetric and Helioseismic Imager (PHI) onboard Solar Orbiter (Solanki et al. 2019) or the Helioseismic and Magnetic Imager (HMI) onboard the Solar Dynamics Observatory (SDO, Scherrer et al. 2012). Specifically defined input stream routines exist in MHSXtraPy making the use of Solar Orbiter and SDO .fits format files particularly easy. However, magnetogram observations by any other than the mentioned instruments can be used through manual instantiation of all of the attributes of a Field2dData object. Field2dData is a dataclass specifically intended for the handling of boundary conditions (see below). Fromt the resulting three-dimensional magnetic field vector the current density, the Lorentz force and the variations in plasma pressure and plasma density can be computed. 
+MHSXtraPy is used for the calculation of solar MHS magnetic fields in Cartesian coordinates, in which the $x$- and $y$-directions are the latitudinal and longitudinal extent of the boundary condition and the $z$-direction dictates the height above the photosphere perpendicular to the orientation of the boundary condition. The code was written in Python, as Python is a widely used language and provides an ecosystem of libraries useful for our purposes. As of now, MHSXtraPy allows for the extrapolation of the magnetic vector field above a photospheric boundary condition obtained from either a manually defined array or from line-of-sight magnetograms observed by either the Polarimetric and Helioseismic Imager (PHI) onboard Solar Orbiter (Solanki et al. 2019) or the Helioseismic and Magnetic Imager (HMI) onboard the Solar Dynamics Observatory (SDO, Scherrer et al. 2012). Specifically defined input stream routines exist in MHSXtraPy making the use of Solar Orbiter and SDO .fits format files particularly easy. However, magnetogram observations by any other than the mentioned instruments can be used through manual instantiation of all of the attributes of a Field2dData object. Field2dData is a dataclass specifically intended for the handling of boundary conditions (see below). From the resulting three-dimensional magnetic field vector the current density, the Lorentz force and the variations in plasma pressure and plasma density can be computed. 
 
-MHSFLEx consists of three main parts which are used successively to calculate the magnetic field vector and resulting model features:
+<!-- MHSFLEx consists of three main parts which are used successively to calculate the magnetic field vector and resulting model features:
 
 1. **Loading data:** Creates a Field2dData object from a given boundary condition.
 
@@ -49,15 +38,13 @@ The code can be found in the folder mhsxtrapy structured into 9 files (alphabeti
 
 **graphics_balanced.py** -- visualisation for fluxbalanced boundary condition (not used explicitly by user) 
 
-**graphics.py** -- visualisation for non fluxbalanced boundary condition (not used explicitly by user) 
-
 **nff2ff.py** -- transition from non force-free to force-free (not used explicitly by user) 
 
 **phibar.py** -- solution of ODE (not used explicitly by user) 
 
-**vis.py** -- visualisation interface (optionally used by user) 
+**vis.py** -- visualisation interface (optionally used by user)  -->
 
-While not competitive to MHD simulation programs in physical realism or to potential fields in computational simplicity, the presented code tries to balance both aspects. Therefore, it provides all essential building blocks for future magnetic field line extrapolations, yet development of the MHSXtraPy package is not complete. Further features should be added, which include but are not limited to:
+While not competitive to MHD simulation programs in physical realism or to potential fields in computational simplicity, the presented code tries to balance both aspects. Therefore, it provides all essential building blocks for future magnetic field extrapolations, yet development of the MHSXtraPy package is not complete. Further features should be added, which include but are not limited to:
 
 - Improved visualisation routines and the creation of a purposeful user interface as well as decoupling of data grid and graphics grid. This would significantly increase the user friendliness of the library.
 - Further, for the application to data, pre-processing routines along the lines of Wiegelmann et al. (2006), Zhu et al. (2020) could be included, such that only azimuthally adjusted data is used.
@@ -70,15 +57,23 @@ For suggestions, questions and requests regarding MHSXtraPy please email [lillin
 
 ## Quick Start
 
-As seen above, for the user of the code only field2d.py, field3d.py and vis.py are relevant. For the most simplistivc case, we assume that the boundary condition is given as np.ndarray (here instantiated as a multipole as in the example seen in EXAMPLE-analytical-bc file). First we import the relevant files:
+As seen above, for the user of the code only field2d.py, field3d.py and vis.py are relevant. For the most simplistivc case, we assume that the boundary condition is given as np.ndarray (here instantiated as a multipole as in the example seen in example-analytical-bc Jupyter notebook). First we import the relevant files:
 
 ```python
 import numpy as np
-from mhsxtrapy.field2d import Field2dData, check_fluxbalance, FluxBalanceState
-from mhsxtrapy.field3d import calculate_magfield
+
 from mhsxtrapy.b3d import WhichSolution
-from mhsxtrapy.vis import plot_magnetogram_3D
 from mhsxtrapy.examples import multipole
+from mhsxtrapy.field2d import Field2dData, FluxBalanceState, check_fluxbalance
+from mhsxtrapy.field3d import calculate_magfield
+from mhsxtrapy.plotting.vis import (
+    plot_ddensity_xy,
+    plot_ddensity_z,
+    plot_dpressure_xy,
+    plot_dpressure_z,
+    plot_magnetogram_2D,
+    plot_magnetogram_3D,
+)
 ```
 
 Then we instantiate the Field2dData object from given parameters:
@@ -87,43 +82,71 @@ Then we instantiate the Field2dData object from given parameters:
 nx, ny, nz, nf = 200, 200, 400, 200
 xmin, xmax, ymin, ymax, zmin, zmax = 0.0, 20.0, 0.0, 20.0, 0.0, 20.0
 
-px = (xmax - xmin) / nx
-py = (ymax - ymin) / ny
-pz = (zmax - zmin) / nz
+"""
+Calculation of pixel sizes and arrays of x-, y- and z-extension of box. 
+"""
+pixelsize_x = (xmax - xmin) / nx
+pixelsize_y = (ymax - ymin) / ny
+pixelsize_z = (zmax - zmin) / nz
 
-x = np.linspace(xmin, xmax, nx, dtype=np.float64)
-y = np.linspace(ymin, ymax, ny, dtype=np.float64)
-z = np.linspace(zmin, zmax, nz, dtype=np.float64)
+x_arr = np.linspace(xmin, xmax, nx, dtype=np.float64)
+y_arr = np.linspace(ymin, ymax, ny, dtype=np.float64)
+z_arr = np.linspace(zmin, zmax, nz, dtype=np.float64)
 
-data_bz = np.random.randn((nx, ny))
+B_PHOTO = 500
 
-if np.fabs(check_fluxbalance(data_bz)) < 0.01:
-    data2d = Field2dData(nx, ny, nz, nf, px, py, pz, x, y, z, data_bz, flux_balance_state=FluxBalanceState.UNBALANCED)
-else: 
-    data2d = Field2dData(nx, ny, nz, nf, px, py, pz, x, y, z, data_bz, flux_balance_state=FluxBalanceState.BALANCED)
+data_bz = np.zeros((ny, nx))
 
+for ix in range(0, nx):
+    for iy in range(0, ny):
+        x = x_arr[ix] / 10.0
+        y = y_arr[iy] / 10.0
+        data_bz[iy, ix] = multipole(x, y)
+
+data2d = Field2dData(
+    nx,
+    ny,
+    nz,
+    nf,
+    pixelsize_x,
+    pixelsize_y,
+    pixelsize_z,
+    x_arr,
+    y_arr,
+    z_arr,
+    data_bz,
+    flux_balance_state=FluxBalanceState.UNBALANCED,
+)
 ```
 
 We choose the extrapolation parameters and the type of solution we want to use. From this we calculate the model:
 
 ```python
-data3d = calculate_magfield(data2d,alpha=0.05, a=0.22, which_solution=WhichSolution.ASYMP, b=1.0, z0=2.0, deltaz=0.2)
+data3d = calculate_magfield(
+    data2d,
+    alpha=0.05,
+    a=0.22,
+    which_solution=WhichSolution.ASYMP,
+    b=1.0,
+    z0=2.0,
+    deltaz=0.2,
+)
 ```
 
 Finally, we use one of the provided visualisation routines:
 
 ```python
-plot_magnetogram_3D(data3d, view="side", footpoints="active-regions")
+plot_magnetogram_3D(data3d, view="los", footpoints="active-regions")
 ```
 
 ## Examples
 
 Four different examples are provided:
 
-- **EXAMPLE-analytical-bc** which uses an analytically defined multipole as boundary condition
-- **EXAMPLE-Low-Lou** which uses a semi-analytical non-linear force-free boundary condition extracted from Low and Lou (1990)
-- **EXAMPLE-SDO** which uses an SDO/HMI magnetogram as boundary condition
-- **EXAMPLE-Solar-Orbiter** which uses a Solar Orbiter/PHI/HRT magnetogram as boundary condition
+- **example-analytical-bc** which uses an analytically defined multipole as boundary condition
+- **example-low-lou** which uses a semi-analytical non-linear force-free boundary condition extracted from Low and Lou (1990)
+- **example-sdo** which uses an SDO/HMI magnetogram as boundary condition
+- **example-solar-orbiter** which uses a Solar Orbiter/PHI/HRT magnetogram as boundary condition
 
 ## Bibliography 
 

@@ -166,7 +166,7 @@ def plot_dpressure_z(data: Field3dData) -> None:
     )
 
     ax.set_xlabel(r"$z$ [Mm]", size=14)
-    plt.xlim([0, data.z0])
+    plt.xlim([0, 2.0 * data.z0])  # type: ignore
     plt.legend(frameon=False)
     ax.tick_params(direction="out", length=2, width=0.5)  # type: ignore
 
@@ -213,7 +213,7 @@ def plot_ddensity_z(data: Field3dData) -> None:
     )
 
     ax.set_xlabel(r"$z$ [Mm]", size=14)
-    plt.xlim([0, data.z0])
+    plt.xlim([0, 2.0 * data.z0])  # type: ignore
     plt.legend(frameon=False)
     ax.tick_params(direction="out", length=2, width=0.5)
 
@@ -313,11 +313,11 @@ def find_center(data: Field3dData) -> Tuple:
     maxima[diff == 0] = 0
     minima[diff == 0] = 0
 
-    labeled_sources, num_objects_sources = label(maxima)
+    labeled_sources, num_objects_sources = label(maxima)  # type: ignore
     slices_sources = find_objects(labeled_sources)
     x_sources, y_sources = [], []
 
-    labeled_sinks, num_objects_sinks = label(minima)
+    labeled_sinks, num_objects_sinks = label(minima)  # type: ignore
     slices_sinks = find_objects(labeled_sinks)
     x_sinks, y_sinks = [], []
 
@@ -358,7 +358,7 @@ def show_poles(data: Field3dData):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     # ax.grid(color="white", linestyle="dotted", linewidth=0.5)
-    ax.contourf(y_plot, x_plot, data.bz, 1000, cmap=cmap)  # , norm=norm)
+    ax.contourf(y_plot, x_plot, data.bz, 1000, cmap=cmap)  # , norm=norm) # type: ignore
     ax.set_xlabel(r"$x/L$")
     ax.set_ylabel(r"$y/L$")
     plt.tick_params(direction="in", length=2, width=0.5)
@@ -440,7 +440,7 @@ def show_footpoints(data: Field3dData) -> None:
                 ax.scatter(
                     ix / (data.nx / xmax),
                     iy / (data.ny / ymax),
-                    color=c2,
+                    color="blue",
                     s=2.0,
                 )
 
@@ -448,12 +448,12 @@ def show_footpoints(data: Field3dData) -> None:
                 ax.scatter(
                     ix / (data.nx / xmax),
                     iy / (data.ny / ymax),
-                    color=c9,
+                    color="yellow",
                     s=2.0,
                 )
 
-    sinks_label = mpatches.Patch(color=c9, label="Sinks")
-    sources_label = mpatches.Patch(color=c2, label="Sources")
+    sinks_label = mpatches.Patch(color="yellow", label="Sinks")
+    sources_label = mpatches.Patch(color="blue", label="Sources")
 
     plt.legend(handles=[sinks_label, sources_label], frameon=False, fontsize=12)
     plt.show()

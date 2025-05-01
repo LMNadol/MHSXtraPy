@@ -120,3 +120,7 @@ psa*
 figures/
 old/
 test-files/
+get-SHARP.ipynb
+get-sdo-from-jsoc.ipynb
+example-back-atmo.ipynb
+test-runtime-performance.ipynb

@@ -144,6 +144,9 @@ def find_corners_SDO(
     cbar.update_ticks()
     cbar.ax.xaxis.set_ticks_position("top")
 
+    plotname = "figures/magnetogram-cutout.png"
+    plt.savefig(plotname, dpi=300, bbox_inches="tight", pad_inches=0.5)
+
     plt.show()
 
 

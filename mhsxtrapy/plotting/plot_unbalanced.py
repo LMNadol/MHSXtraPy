@@ -130,9 +130,9 @@ def set_axis_labels(ax, x_length, y_length, z_length):
     z_relative = log_lengths[2] / max_log_length
 
     # Base padding value
-    base_pad_x = x_length / 8.0
-    base_pad_y = y_length / 8.0
-    base_pad_z = z_length / 8.0
+    base_pad_x = x_length / 2.0
+    base_pad_y = y_length / 2.0
+    base_pad_z = z_length / 6.0
 
     # Calculate padding with exponential scaling for very different lengths
     def calculate_pad(relative_size, base_pad):
@@ -242,7 +242,7 @@ def plot_magnetogram_3D(
         ax.set_yticklabels([])  # type: ignore
         ax.set_ylabel("")
 
-        [t.set_va("center") for t in ax.get_xticklabels()]  # type: ignore
+        [t.set_va("top") for t in ax.get_xticklabels()]  # type: ignore
         [t.set_ha("center") for t in ax.get_xticklabels()]  # type: ignore
 
         [t.set_va("center") for t in ax.get_zticklabels()]  # type: ignore
