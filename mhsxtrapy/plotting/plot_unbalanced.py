@@ -59,6 +59,8 @@ cmap_density = colors.LinearSegmentedColormap.from_list(
 norm_aia = colors.SymLogNorm(50, vmin=6e1, vmax=100e02)
 cmap_aia = colormaps["sdoaia171"]
 
+norm_hmi = colors.SymLogNorm(50, vmin=-7.5e2, vmax=7.5e2)
+
 MU0 = 1.25663706 * 10**-6
 L = 10**6
 G_SOLAR = 272.2
@@ -211,6 +213,7 @@ def plot_magnetogram_3D(
             data.bz,
             20,
             cmap=cmap_magneto,
+            norm=norm_hmi,
             offset=0.0,
         )
 

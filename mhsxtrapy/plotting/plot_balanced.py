@@ -61,6 +61,8 @@ cmap_density = colors.LinearSegmentedColormap.from_list(
 norm_aia = colors.SymLogNorm(50, vmin=6e1, vmax=100e02)
 cmap_aia = colormaps["sdoaia171"]
 
+norm_hmi = colors.SymLogNorm(50, vmin=-7.5e2, vmax=7.5e2)
+
 MU0 = 1.25663706 * 10**-6
 L = 10**6
 G_SOLAR = 272.2
@@ -120,6 +122,7 @@ def plot_magnetogram_3D(
             data.bz,
             20,
             cmap=cmap_magneto,
+            norm=norm_hmi,
             offset=0.0,
         )
 
@@ -342,8 +345,8 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
     boxedges[0, 2] = zmin
     boxedges[1, 2] = zmax  # 2 * data.z0  # FOR ZOOM
 
-    for ix in range(0, data.nx, int(data.nx / 20)):
-        for iy in range(0, data.ny, int(data.ny / 20)):
+    for ix in range(0, data.nx, int(data.nx / 50)):
+        for iy in range(0, data.ny, int(data.ny / 50)):
             if sources[iy, ix] != 0 or sinks[iy, ix] != 0:
 
                 x_start = ix / (data.nx / xmax)  # + 1.0e-8
@@ -379,7 +382,7 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
                         fieldline[:, 0],
                         fieldline[:, 2],
                         color="black",
-                        linewidth=0.5,
+                        linewidth=0.7,
                         zorder=4000,
                     )
 
@@ -389,7 +392,7 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
                         fieldline[:, 0],
                         fieldline[:, 2],
                         color="black",
-                        linewidth=0.5,
+                        linewidth=0.7,
                         zorder=4000,
                     )
 
