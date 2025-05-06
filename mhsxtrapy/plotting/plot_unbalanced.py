@@ -6,7 +6,7 @@ from typing import Literal, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import colors, rc
+from matplotlib import colors, rc, colormaps
 
 from mhsxtrapy.field2d import Field2dData
 from mhsxtrapy.field3d import Field3dData
@@ -55,6 +55,9 @@ cmap_density = colors.LinearSegmentedColormap.from_list(
         (1.000, (0.125, 0.082, 0.082)),
     ),
 )
+
+norm_aia = colors.SymLogNorm(50, vmin=6e1, vmax=100e02)
+cmap_aia = colormaps["sdoaia171"]
 
 MU0 = 1.25663706 * 10**-6
 L = 10**6
@@ -155,6 +158,7 @@ def plot_magnetogram_3D(
     data: Field3dData,
     view: Literal["los", "side", "angular"],
     footpoints: Literal["all", "active-regions"],
+    boundary: Literal["FeI-6173", "EUV"] = "FeI-6173",
 ):
     """
     Create figure of magnetic field line from Field3dData object. Specify angle of view and optional zoom
@@ -169,6 +173,10 @@ def plot_magnetogram_3D(
         ValueError: In case view value is wrong
         ValueError: In case footpoints value is wrong
     """
+
+    if boundary == "EUV":
+        if data.EUV is None:
+            raise ValueError("EUV selected as boundary, but no EUV image provided.")
 
     xmin, xmax, ymin, ymax, zmin, zmax = (
         data.x[0],
@@ -185,14 +193,26 @@ def plot_magnetogram_3D(
     x_grid, y_grid = np.meshgrid(x_big, y_big)
     fig = plt.figure()
     ax = fig.figure.add_subplot(111, projection="3d")
-    ax.contourf(
-        x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
-        y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
-        data.bz,
-        20,
-        cmap=cmap_magneto,
-        offset=0.0,
-    )
+
+    if boundary == "EUV":
+        ax.contourf(
+            x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
+            y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
+            data.EUV,
+            1000,
+            cmap=cmap_aia,
+            norm=norm_aia,
+            offset=0.0,
+        )
+    else:
+        ax.contourf(
+            x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
+            y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
+            data.bz,
+            20,
+            cmap=cmap_magneto,
+            offset=0.0,
+        )
 
     ax.grid(False)
     ax.set_zlim(zmin, zmax)  # type: ignore

@@ -36,7 +36,13 @@ norm = colors.SymLogNorm(50, vmin=-7.5e2, vmax=7.5e2)
 
 
 def find_corners_SDO(
-    path: str, ulon: float, llon: float, ulat: float, llat: float
+    path: str,
+    ulon: float,
+    llon: float,
+    ulat: float,
+    llat: float,
+    cmap=cmap_magneto,
+    norm=norm,
 ) -> None:
     """
     Plots SDO magnetogram and cut-out region defined through ulon, llon, ulat and llat.
@@ -68,7 +74,7 @@ def find_corners_SDO(
     ax1 = fig.add_subplot(121, projection=magnetogram_big)
     magnetogram_big.plot(  # type: ignore
         axes=ax1,
-        cmap=cmap_magneto,
+        cmap=cmap,
         norm=norm,
         annotate=False,
     )
@@ -87,7 +93,7 @@ def find_corners_SDO(
     im = magnetogram_small.plot(
         axes=ax2,
         norm=norm,
-        cmap=cmap_magneto,
+        cmap=cmap,
         annotate=False,
     )
     ax2.grid(alpha=0)

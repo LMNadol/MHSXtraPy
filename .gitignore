@@ -124,3 +124,6 @@ get-SHARP.ipynb
 get-sdo-from-jsoc.ipynb
 example-back-atmo.ipynb
 test-runtime-performance.ipynb
+extra_data/
+test_sharp_overplot.ipynb
+download.py

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 import numpy as np
 import sunpy.map
@@ -9,6 +10,12 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.io.fits import getdata
 from astropy.io.fits import open as astroopen
+
+from scipy.interpolate import griddata
+
+from sunpy.map.sources import AIAMap
+
+from mhsxtrapy.download import SHARPdata
 
 
 class FluxBalanceState(Enum):
@@ -49,6 +56,53 @@ class Field2dData:
     bz: np.ndarray
 
     flux_balance_state: FluxBalanceState
+
+    EUV: np.ndarray | None = None
+
+    @classmethod
+    def from_SHARP_object(cls, sharpdata: SHARPdata):
+
+        nf = min(sharpdata.nx, sharpdata.ny)
+
+        zmax = 20.0
+        zmin = 0.0
+        # pz = np.float64(90.0 * 10**-3)
+        pz = max(sharpdata.px, sharpdata.py)
+
+        nz = int(np.floor(zmax / pz))
+
+        z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
+
+        if np.fabs(check_fluxbalance(sharpdata.bz)) < 0.01:
+            return Field2dData(
+                sharpdata.nx,
+                sharpdata.ny,
+                nz,
+                nf,
+                sharpdata.px,
+                sharpdata.py,
+                pz,
+                sharpdata.x,
+                sharpdata.y,
+                z,
+                sharpdata.bz,
+                flux_balance_state=FluxBalanceState.BALANCED,
+            )
+        else:
+            return Field2dData(
+                sharpdata.nx,
+                sharpdata.ny,
+                nz,
+                nf,
+                sharpdata.px,
+                sharpdata.py,
+                pz,
+                sharpdata.x,
+                sharpdata.y,
+                z,
+                sharpdata.bz,
+                flux_balance_state=FluxBalanceState.UNBALANCED,
+            )
 
     @classmethod
     def from_fits_SolarOrbiter(
@@ -154,7 +208,13 @@ class Field2dData:
 
     @classmethod
     def from_fits_SDO(
-        cls, path: str, ulon: float, llon: float, ulat: float, llat: float
+        cls,
+        path: str,
+        ulon: float,
+        llon: float,
+        ulat: float,
+        llat: float,
+        path_aia: str | None = None,
     ):
         """
         Creates dataclass of type Field2dData from SDO HMI data in .fits format.
@@ -234,7 +294,7 @@ class Field2dData:
         z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
 
         if np.fabs(check_fluxbalance(image.data)) < 0.01:
-            return Field2dData(
+            data2d = Field2dData(
                 nx,
                 ny,
                 nz,
@@ -249,7 +309,7 @@ class Field2dData:
                 flux_balance_state=FluxBalanceState.BALANCED,
             )
         else:
-            return Field2dData(
+            data2d = Field2dData(
                 nx,
                 ny,
                 nz,
@@ -263,6 +323,17 @@ class Field2dData:
                 image.data,
                 flux_balance_state=FluxBalanceState.UNBALANCED,
             )
+
+        if path_aia is not None:
+            aia_image = sunpy.map.Map(path_aia).rotate()  # type: ignore
+            aia_image_small = aia_image.submap(
+                left_corner, top_right=right_corner
+            ).rotate()
+            aia_image_resize = resize_aia(data2d, aia_image_small)
+
+            data2d.EUV = aia_image_resize
+
+        return data2d
 
 
 def check_fluxbalance(bz: np.ndarray) -> float:
@@ -298,3 +369,21 @@ def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
     """
     Jz = np.gradient(by, axis=1) - np.gradient(bx, axis=0)
     return np.sum(Jz * np.sign(bz)) / np.sum(np.fabs(bz))
+
+
+def resize_aia(data: Field2dData, aia_image: AIAMap) -> np.ndarray:
+    nx = aia_image.data.shape[1]  # type: ignore
+    ny = aia_image.data.shape[0]  # type: ignore
+
+    x = np.arange(nx) * (data.x[-1] - data.x[0]) / (nx - 1) - data.x[0]
+    y = np.arange(ny) * (data.y[-1] - data.y[0]) / (ny - 1) - data.y[0]
+
+    xv_fine, yv_fine = np.meshgrid(data.x, data.y)
+    xv, yv = np.meshgrid(x, y)
+
+    return griddata(
+        np.column_stack((yv.flatten(), xv.flatten())),
+        aia_image.data.flatten(),
+        np.column_stack((yv_fine.flatten(), xv_fine.flatten())),
+        method="cubic",
+    ).reshape(data.bz.shape)

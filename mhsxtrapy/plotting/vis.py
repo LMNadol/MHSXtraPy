@@ -9,6 +9,9 @@ from matplotlib import colors, rc
 import matplotlib.patches as mpatches
 import numpy as np
 from scipy.ndimage import maximum_filter, minimum_filter, label, find_objects
+from scipy.interpolate import griddata
+
+from sunpy.map.sources import AIAMap
 
 from mhsxtrapy.field2d import Field2dData
 from mhsxtrapy.field3d import Field3dData, FluxBalanceState
@@ -232,6 +235,7 @@ def plot_magnetogram_3D(
     data: Field3dData,
     view: Literal["los", "side", "angular"],
     footpoints: Literal["all", "active-regions"],
+    boundary: Literal["FeI-6173", "EUV"] = "FeI-6173",
 ):
     """
     Wrapper function for 3D magentic field plotting.
@@ -244,11 +248,11 @@ def plot_magnetogram_3D(
 
     if data.flux_balance_state == FluxBalanceState.BALANCED:
 
-        plot_magnetogram_3D_balanced(data, view, footpoints)
+        plot_magnetogram_3D_balanced(data, view, footpoints, boundary)
 
     elif data.flux_balance_state == FluxBalanceState.UNBALANCED:
 
-        plot_magnetogram_3D_unbalanced(data, view, footpoints)
+        plot_magnetogram_3D_unbalanced(data, view, footpoints, boundary)
 
 
 def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:

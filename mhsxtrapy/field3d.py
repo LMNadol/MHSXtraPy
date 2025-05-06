@@ -3,6 +3,7 @@ from __future__ import annotations
 import pickle
 from dataclasses import dataclass
 from functools import cached_property
+from typing import Optional
 
 import numpy as np
 
@@ -87,6 +88,8 @@ class Field3dData:
     deltaz: float | None = None
 
     kappa: float | None = None
+
+    EUV: np.ndarray | None = None
 
     def save(self, path):
         """
@@ -459,6 +462,7 @@ def calculate_magfield(
         z0=z0,
         deltaz=deltaz,
         kappa=kappa,
+        EUV=field2d.EUV,
     )
 
     return data

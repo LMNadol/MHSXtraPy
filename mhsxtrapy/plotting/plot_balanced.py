@@ -7,7 +7,7 @@ from typing import Literal, Tuple
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import colors, rc
+from matplotlib import colors, rc, colormaps
 from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
 from mhsxtrapy.field2d import Field2dData
@@ -58,6 +58,9 @@ cmap_density = colors.LinearSegmentedColormap.from_list(
     ),
 )
 
+norm_aia = colors.SymLogNorm(50, vmin=6e1, vmax=100e02)
+cmap_aia = colormaps["sdoaia171"]
+
 MU0 = 1.25663706 * 10**-6
 L = 10**6
 G_SOLAR = 272.2
@@ -67,6 +70,7 @@ def plot_magnetogram_3D(
     data: Field3dData,
     view: Literal["los", "side", "angular"],
     footpoints: Literal["all", "active-regions"],
+    boundary: Literal["FeI-6173", "EUV"] = "FeI-6173",
 ):
     """
     Create figure of magnetic field line from Field3dData object. Specify angle of view and optional zoom
@@ -82,6 +86,10 @@ def plot_magnetogram_3D(
         ValueError: In case footpoints value is wrong
     """
 
+    if boundary == "EUV":
+        if data.EUV is None:
+            raise ValueError("EUV selected as boundary, but no EUV image provided.")
+
     xmin, xmax, ymin, ymax, zmin, zmax = (
         data.x[0],
         data.x[-1],
@@ -94,14 +102,26 @@ def plot_magnetogram_3D(
     x_grid, y_grid = np.meshgrid(data.x, data.y)
     fig = plt.figure()
     ax = fig.figure.add_subplot(111, projection="3d")
-    ax.contourf(
-        x_grid,
-        y_grid,
-        data.bz,
-        20,
-        cmap=cmap_magneto,
-        offset=0.0,
-    )
+
+    if boundary == "EUV":
+        ax.contourf(
+            x_grid,
+            y_grid,
+            data.EUV,
+            1000,
+            cmap=cmap_aia,
+            norm=norm_aia,
+            offset=0.0,
+        )
+    else:
+        ax.contourf(
+            x_grid,
+            y_grid,
+            data.bz,
+            20,
+            cmap=cmap_magneto,
+            offset=0.0,
+        )
 
     ax.set_xlabel(r"$x$ [Mm]", size=14)
     ax.set_ylabel(r"$y$ [Mm]", size=14)
