@@ -15,7 +15,7 @@ from scipy.interpolate import griddata
 
 from sunpy.map.sources import AIAMap
 
-from mhsxtrapy.download import SHARPdata
+# from mhsxtrapy.download import SHARPdata
 
 
 class FluxBalanceState(Enum):
@@ -59,50 +59,50 @@ class Field2dData:
 
     EUV: np.ndarray | None = None
 
-    @classmethod
-    def from_SHARP_object(cls, sharpdata: SHARPdata):
+    # @classmethod
+    # def from_SHARP_object(cls, sharpdata: SHARPdata):
 
-        nf = min(sharpdata.nx, sharpdata.ny)
+    #     nf = min(sharpdata.nx, sharpdata.ny)
 
-        zmax = 20.0
-        zmin = 0.0
-        # pz = np.float64(90.0 * 10**-3)
-        pz = max(sharpdata.px, sharpdata.py)
+    #     zmax = 20.0
+    #     zmin = 0.0
+    #     # pz = np.float64(90.0 * 10**-3)
+    #     pz = max(sharpdata.px, sharpdata.py)
 
-        nz = int(np.floor(zmax / pz))
+    #     nz = int(np.floor(zmax / pz))
 
-        z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
+    #     z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
 
-        if np.fabs(check_fluxbalance(sharpdata.bz)) < 0.01:
-            return Field2dData(
-                sharpdata.nx,
-                sharpdata.ny,
-                nz,
-                nf,
-                sharpdata.px,
-                sharpdata.py,
-                pz,
-                sharpdata.x,
-                sharpdata.y,
-                z,
-                sharpdata.bz,
-                flux_balance_state=FluxBalanceState.BALANCED,
-            )
-        else:
-            return Field2dData(
-                sharpdata.nx,
-                sharpdata.ny,
-                nz,
-                nf,
-                sharpdata.px,
-                sharpdata.py,
-                pz,
-                sharpdata.x,
-                sharpdata.y,
-                z,
-                sharpdata.bz,
-                flux_balance_state=FluxBalanceState.UNBALANCED,
-            )
+    #     if np.fabs(check_fluxbalance(sharpdata.bz)) < 0.01:
+    #         return Field2dData(
+    #             sharpdata.nx,
+    #             sharpdata.ny,
+    #             nz,
+    #             nf,
+    #             sharpdata.px,
+    #             sharpdata.py,
+    #             pz,
+    #             sharpdata.x,
+    #             sharpdata.y,
+    #             z,
+    #             sharpdata.bz,
+    #             flux_balance_state=FluxBalanceState.BALANCED,
+    #         )
+    #     else:
+    #         return Field2dData(
+    #             sharpdata.nx,
+    #             sharpdata.ny,
+    #             nz,
+    #             nf,
+    #             sharpdata.px,
+    #             sharpdata.py,
+    #             pz,
+    #             sharpdata.x,
+    #             sharpdata.y,
+    #             z,
+    #             sharpdata.bz,
+    #             flux_balance_state=FluxBalanceState.UNBALANCED,
+    #         )
 
     @classmethod
     def from_fits_SolarOrbiter(
