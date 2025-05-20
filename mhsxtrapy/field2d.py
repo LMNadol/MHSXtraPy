@@ -387,3 +387,52 @@ def resize_aia(data: Field2dData, aia_image: AIAMap) -> np.ndarray:
         np.column_stack((yv_fine.flatten(), xv_fine.flatten())),
         method="cubic",
     ).reshape(data.bz.shape)
+
+
+def maximal_a(field: Field2dData, alpha: float, b: float) -> float:
+
+    if field.flux_balance_state == FluxBalanceState.BALANCED:
+        l = 1.0
+        nf = int(np.floor(field.nf / 2))
+    elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
+        l = 2.0
+        nf = field.nf
+    else:
+        raise ValueError(
+            f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
+        )
+
+    lx = field.nx * field.px * l
+    ly = field.ny * field.py * l
+    lxn = lx / l
+    lyn = ly / l
+
+    if field.flux_balance_state == FluxBalanceState.BALANCED:
+        kx = np.arange(nf) * 2.0 * np.pi / lxn
+        ky = np.arange(nf) * 2.0 * np.pi / lyn
+    elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
+        kx = np.arange(nf) * np.pi / lxn
+        ky = np.arange(nf) * np.pi / lyn
+    else:
+        raise ValueError(
+            f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
+        )
+
+    ones = 0.0 * np.arange(nf) + 1.0
+
+    k2 = np.outer(ky**2, ones) + np.outer(ones, kx**2)
+
+    if field.flux_balance_state == FluxBalanceState.BALANCED:
+        k2[0, 0] = (2.0 * np.pi / lxn) ** 2 + (2.0 * np.pi / lyn) ** 2
+    elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
+        k2[0, 0] = (np.pi / lxn) ** 2 + (np.pi / lyn) ** 2
+        k2[1, 0] = (np.pi / lxn) ** 2 + (np.pi / lyn) ** 2
+        k2[0, 1] = (np.pi / lxn) ** 2 + (np.pi / lyn) ** 2
+    else:
+        raise ValueError(
+            f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
+        )
+
+    a_max = 1.0 / (1.0 + b) * (1.0 - alpha**2 / k2.min())
+
+    return a_max

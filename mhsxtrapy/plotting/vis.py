@@ -35,6 +35,8 @@ from mhsxtrapy.plotting.plot_balanced import (
     plot_magnetogram_3D as plot_magnetogram_3D_balanced,
 )
 
+from scipy.interpolate import interp1d
+
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=True)
 
@@ -150,19 +152,31 @@ def plot_dpressure_z(data: Field3dData) -> None:
     ix_max = np.unravel_index(data.bz.argmax(), data.bz.shape)[1]
     iy_max = np.unravel_index(data.bz.argmax(), data.bz.shape)[0]
 
+    z_fine = np.linspace(data.z[0], data.z[-1], 1500)
+    interp_func = interp1d(
+        data.z,
+        data.dpressure[iy_max, ix_max, :],
+        kind="cubic",
+        fill_value="extrapolate",
+    )
+    data_fine = interp_func(z_fine)
+
+    interp_func2 = interp1d(data.z, min_values, kind="cubic", fill_value="extrapolate")
+    data_fine2 = interp_func2(z_fine)
+
     fig, ax = plt.subplots()
 
     ax.plot(
-        data.z,
-        data.dpressure[iy_max, ix_max, :] * (B0 * 10**-4) ** 2.0 / MU0,
+        z_fine,
+        data_fine * (B0 * 10**-4) ** 2.0 / MU0,
         linewidth=1.5,
         color="black",
         label=r"at maximal $B_z(z=0)$",
     )
 
     ax.plot(
-        data.z,
-        min_values * (B0 * 10**-4) ** 2.0 / MU0,
+        z_fine,
+        data_fine2 * (B0 * 10**-4) ** 2.0 / MU0,
         linewidth=1.5,
         color=(0.498, 0.502, 0.973),
         label=r"minimum per $z$",
@@ -197,19 +211,28 @@ def plot_ddensity_z(data: Field3dData) -> None:
     ix_max = np.unravel_index(data.bz.argmax(), data.bz.shape)[1]
     iy_max = np.unravel_index(data.bz.argmax(), data.bz.shape)[0]
 
+    z_fine = np.linspace(data.z[0], data.z[-1], 1500)
+    interp_func = interp1d(
+        data.z, data.ddensity[iy_max, ix_max, :], kind="cubic", fill_value="extrapolate"
+    )
+    data_fine = interp_func(z_fine)
+
+    interp_func2 = interp1d(data.z, min_values, kind="cubic", fill_value="extrapolate")
+    data_fine2 = interp_func2(z_fine)
+
     fig, ax = plt.subplots()
 
     ax.plot(
-        data.z,
-        data.ddensity[iy_max, ix_max, :] * (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L),
+        z_fine,
+        data_fine * (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L),
         linewidth=1.5,
         color="black",
         label=r"at maximal $B_z(z=0)$",
     )
 
     ax.plot(
-        data.z,
-        min_values * (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L),
+        z_fine,
+        data_fine2 * (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L),
         linewidth=1.5,
         color=(0.827, 0.369, 0.494),
         label=r"minimum per $z$",

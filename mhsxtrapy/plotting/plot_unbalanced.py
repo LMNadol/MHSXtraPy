@@ -197,7 +197,7 @@ def plot_magnetogram_3D(
     ax = fig.figure.add_subplot(111, projection="3d")
 
     if boundary == "EUV":
-        ax.contourf(
+        C = ax.contourf(
             x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
             y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
             data.EUV,
@@ -207,7 +207,7 @@ def plot_magnetogram_3D(
             offset=0.0,
         )
     else:
-        ax.contourf(
+        C = ax.contourf(
             x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
             y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx],
             data.bz,
@@ -289,7 +289,7 @@ def plot_magnetogram_3D(
     # Ensure the 'figures' directory exists
     if not os.path.exists("figures"):
         os.makedirs("figures")
-
+    # plt.colorbar(C)
     # Construct the path using the view variable
     path = f"figures/magnetogram-3D_{view}.png"
 
