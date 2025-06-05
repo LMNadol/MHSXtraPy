@@ -1,23 +1,22 @@
 # MHSXtraPy
 
-MHSXtraPy is a set of Python codes for three-dimensional linear magnetohydrostatic (MHS) extrapolation from a given two-dimensional array, intended for the extrapolation of magnetic fields observed on the solar photosphere.
+MHSXtraPy is a Python code for three-dimensional linear magnetohydrostatic (MHS) extrapolation from a given two-dimensional boundary condition, intended for the extrapolation of magnetic fields observed on the solar photosphere.
 
-L. Nadol 2025-05-01
+L. Nadol 2025-06-05
 
 An overview of the underlying theory is provided in the following publication:
 
 Nadol, L., Neukirch, T. (2025).
 An efficient method for magnetic field extrapolation based on a family of analytical three-dimensional magnetohydrostatic equilibria,
-Accepted and soon published by Solar Physics,
-https://doi.org/10.48550/arXiv.2504.16619 
+https://link.springer.com/article/10.1007/s11207-025-02469-1
 
 An overview of the codes will be provided in a subsequent publication intended for the journal Royal Astronmical Society Techniques and Instruments.
 
-In this repository, I present a Python code for local linear 3D MHS magnetic field extrapolation in Cartesian geometry developed during December 2022 and March 2025. On the one hand, there may be limited interest in the code given the linear nature of their mathematical description and given that non-linear solutions regularly outperform such (Wiegelmann & Sakurai, 2021) when it comes to agreement with observations (Pevtsov et al., 1994, DeRosa et al., 2009). On the other hand, the code works efficiently and the method incorporates the non force-free lower chromosphere and photosphere, which other popular methods fail to do as they rely on the assumption of a force-free solar atmosphere throughout.
-
 ## Details
 
-MHSXtraPy is used for the calculation of solar MHS magnetic fields in Cartesian coordinates, in which the $x$- and $y$-directions are the latitudinal and longitudinal extent of the boundary condition and the $z$-direction dictates the height above the photosphere perpendicular to the orientation of the boundary condition. The code was written in Python, as Python is a widely used language and provides an ecosystem of libraries useful for our purposes. As of now, MHSXtraPy allows for the extrapolation of the magnetic vector field above a photospheric boundary condition obtained from either a manually defined array or from line-of-sight magnetograms observed by either the Polarimetric and Helioseismic Imager (PHI) onboard Solar Orbiter (Solanki et al. 2019) or the Helioseismic and Magnetic Imager (HMI) onboard the Solar Dynamics Observatory (SDO, Scherrer et al. 2012). Specifically defined input stream routines exist in MHSXtraPy making the use of Solar Orbiter and SDO .fits format files particularly easy. However, magnetogram observations by any other than the mentioned instruments can be used through manual instantiation of all of the attributes of a Field2dData object. Field2dData is a dataclass specifically intended for the handling of boundary conditions (see below). From the resulting three-dimensional magnetic field vector the current density, the Lorentz force and the variations in plasma pressure and plasma density can be computed. 
+In this repository, I present a Python code for local linear 3D MHS magnetic field extrapolation in Cartesian geometry developed during my PhD. The code works efficiently and the method incorporates the non force-free lower chromosphere and photosphere, which other popular methods fail to do as they rely on the assumption of a force-free solar atmosphere throughout.
+
+In the model and code the $x$- and $y$-directions are the latitudinal and longitudinal extent of the boundary condition and the $z$-direction dictates the height above the photosphere perpendicular to the orientation of the boundary condition. The code was written in Python, as Python is a widely used language and provides an ecosystem of libraries useful for our purposes. As of now, MHSXtraPy allows for the extrapolation of the magnetic vector field above a photospheric boundary condition obtained from either a manually defined array or from line-of-sight magnetograms observed by either the Polarimetric and Helioseismic Imager (PHI) onboard Solar Orbiter (Solanki et al. 2019) or the Helioseismic and Magnetic Imager (HMI) onboard the Solar Dynamics Observatory (SDO, Scherrer et al. 2012). Specifically defined input stream routines exist in MHSXtraPy making the use of Solar Orbiter and SDO .fits format files particularly easy. However, magnetogram observations by any other than the mentioned instruments can be used through manual instantiation of all of the attributes of a Field2dData object. Field2dData is a dataclass specifically intended for the handling of boundary conditions (see below). From the resulting three-dimensional magnetic field vector the current density, the Lorentz force and the deviations from hydrostatic balance in plasma pressure and plasma density can be computed. 
 
 <!-- MHSFLEx consists of three main parts which are used successively to calculate the magnetic field vector and resulting model features:
 
@@ -44,7 +43,9 @@ The code can be found in the folder mhsxtrapy structured into 9 files (alphabeti
 
 **vis.py** -- visualisation interface (optionally used by user)  -->
 
-While not competitive to MHD simulation programs in physical realism or to potential fields in computational simplicity, the presented code tries to balance both aspects. Therefore, it provides all essential building blocks for future magnetic field extrapolations, yet development of the MHSXtraPy package is not complete. Further features should be added, which include but are not limited to:
+<!-- While not competitive to MHD simulation programs in physical realism or to potential fields in computational simplicity, the presented code tries to balance both aspects. Therefore, it provides all essential building blocks for future magnetic field extrapolations, yet development of the MHSXtraPy package is not complete. -->
+
+Ideas for future developments of the code include but are not limited to: 
 
 - Improved visualisation routines and the creation of a purposeful user interface as well as decoupling of data grid and graphics grid. This would significantly increase the user friendliness of the library.
 - Further, for the application to data, pre-processing routines along the lines of Wiegelmann et al. (2006), Zhu et al. (2020) could be included, such that only azimuthally adjusted data is used.
@@ -57,7 +58,7 @@ For suggestions, questions and requests regarding MHSXtraPy please email [lillin
 
 ## Quick Start
 
-As seen above, for the user of the code only field2d.py, field3d.py and vis.py are relevant. For the most simplistivc case, we assume that the boundary condition is given as np.ndarray (here instantiated as a multipole as in the example seen in example-analytical-bc Jupyter notebook). First we import the relevant files:
+For the use of the code only field2d.py, field3d.py and vis.py are relevant. For the most simplistic case, we assume that the boundary condition is given as np.ndarray (here instantiated as a multipole as in the example seen in example-analytical-bc Jupyter notebook). First we import the relevant files:
 
 ```python
 import numpy as np
@@ -141,12 +142,14 @@ plot_magnetogram_3D(data3d, view="los", footpoints="active-regions")
 
 ## Examples
 
-Four different examples are provided:
+Four different examples are provided as Jupyter notebooks:
 
 - **example-analytical-bc** which uses an analytically defined multipole as boundary condition
 - **example-low-lou** which uses a semi-analytical non-linear force-free boundary condition extracted from Low and Lou (1990)
 - **example-sdo** which uses an SDO/HMI magnetogram as boundary condition
 - **example-solar-orbiter** which uses a Solar Orbiter/PHI/HRT magnetogram as boundary condition
+
+As well as the notebook **paper.ipynb** which contains the example used in the RASTI paper.
 
 ## Bibliography 
 
