@@ -135,6 +135,18 @@ def plot_magnetogram_3D(
     ax.set_ylim(ymin, ymax)
     ax.set_box_aspect((xmax, ymax, zmax))  # type: ignore
 
+    x_length = abs(xmax - xmin)
+    y_length = abs(ymax - ymin)
+    z_length = abs(zmax - zmin)
+    max_length = max(x_length, y_length, z_length)
+
+    x_relative = x_length / max_length
+    y_relative = y_length / max_length
+    z_relative = z_length / max_length  # type: ignore
+
+    # Set axis labels with dynamic positioning
+    set_axis_labels(ax, x_length, y_length, z_length)
+
     if footpoints == "all":
         plot_fieldlines_grid(data, ax)
     elif footpoints == "active-regions":
@@ -156,6 +168,7 @@ def plot_magnetogram_3D(
         [t.set_va("center") for t in ax.get_xticklabels()]  # type: ignore
         [t.set_ha("center") for t in ax.get_xticklabels()]  # type: ignore
     elif view == "side":
+        ax.set_zticks(np.linspace(zmin, zmax, 5))
         ax.view_init(0, -90)  # type: ignore
         ax.set_yticklabels([])  # type: ignore
         ax.set_ylabel("")
@@ -163,9 +176,11 @@ def plot_magnetogram_3D(
         [t.set_va("top") for t in ax.get_xticklabels()]  # type: ignore
         [t.set_ha("center") for t in ax.get_xticklabels()]  # type: ignore
 
-        [t.set_va("center") for t in ax.get_zticklabels()]  # type: ignore
+        [t.set_va("top") for t in ax.get_zticklabels()]  # type: ignore
         [t.set_ha("center") for t in ax.get_zticklabels()]  # type: ignore
+
     elif view == "angular":
+        ax.set_zticks(np.linspace(zmin, zmax, 5))
         ax.view_init(30, 240, 0)  # type: ignore
 
         [t.set_va("bottom") for t in ax.get_yticklabels()]  # type: ignore
@@ -189,7 +204,7 @@ def plot_magnetogram_3D(
     # Construct the path using the view variable
     path = f"figures/magnetogram-3D_{view}.png"
 
-    plt.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.2)
+    plt.savefig(path, dpi=300, pad_inches=0.2)
 
     plt.show()
 
@@ -516,3 +531,46 @@ def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
     plotname = f"figures/ddensity_xy_z={str(round(data.z[index], 2))}.png"
     plt.savefig(plotname, dpi=300, bbox_inches="tight", pad_inches=0.1)
     plt.show()
+
+
+def set_axis_labels(ax, x_length, y_length, z_length):
+    """
+    Set axis labels with improved positioning for largely different axis lengths
+
+    Args:
+        ax (_type_): previous plotting environment
+        x_length (_type_): length of x-direction array
+        y_length (_type_): length of y-direction array
+        z_length (_type_): length of z-direction array
+
+    """
+    # Calculate length ratios using log scale to handle large differences
+    lengths = np.array([x_length, y_length, z_length])
+    log_lengths = np.log10(lengths)
+    max_log_length = np.max(log_lengths)
+
+    # Calculate relative sizes on log scale
+    x_relative = log_lengths[0] / max_log_length
+    y_relative = log_lengths[1] / max_log_length
+    z_relative = log_lengths[2] / max_log_length
+
+    # Base padding value
+    base_pad_x = x_length / 6.0
+    base_pad_y = y_length / 6.0
+    base_pad_z = z_length / 6.0
+
+    # Calculate padding with exponential scaling for very different lengths
+    def calculate_pad(relative_size, base_pad):
+        if relative_size < 0.5:
+            return base_pad * np.exp(2 * (1 - relative_size))
+        return base_pad
+
+    # Set labels with calculated padding
+    ax.set_xlabel(r"$x$ [Mm]", labelpad=calculate_pad(x_relative, base_pad_x))
+    ax.set_ylabel(r"$y$ [Mm]", labelpad=calculate_pad(y_relative, base_pad_y))
+    ax.set_zlabel(r"$z$ [Mm]", labelpad=calculate_pad(z_relative, base_pad_z))
+
+    # Adjust label rotations based on the relative sizes
+    ax.xaxis.label.set_rotation(20)
+    ax.yaxis.label.set_rotation(-20)
+    ax.zaxis.label.set_rotation(0)
