@@ -39,6 +39,7 @@ from scipy.interpolate import interp1d
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=True)
+plt.rcParams["text.usetex"] = False
 
 cmap_magneto = colors.LinearSegmentedColormap.from_list(
     "cmap_magneto",
