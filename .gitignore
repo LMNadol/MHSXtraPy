@@ -85,3 +85,4 @@ test-files/
 # ==========================
 deploy.sh
 download.py
+restructure-plan.md
