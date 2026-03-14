@@ -59,7 +59,6 @@ htmlcov/
 # Jupyter Notebooks
 # ==========================
 .ipynb_checkpoints/
-paper.ipynb
 example-back-atmo.ipynb
 
 # ==========================
