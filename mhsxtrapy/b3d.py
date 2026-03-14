@@ -303,10 +303,20 @@ def b3d(
         bfield = np.zeros((field.ny, field.nx, field.nz, 3))
         dbz = np.zeros((field.ny, field.nx, field.nz, 3))
 
-        sin_x = np.sin(np.outer(kx, field.x - lxn / 2.0))
-        sin_y = np.sin(np.outer(ky, field.y - lyn / 2.0))
-        cos_x = np.cos(np.outer(kx, field.x - lxn / 2.0))
-        cos_y = np.cos(np.outer(ky, field.y - lyn / 2.0))
+        # sin_x = np.sin(np.outer(kx, field.x - lxn / 2.0))
+        # sin_y = np.sin(np.outer(ky, field.y - lyn / 2.0))
+        # cos_x = np.cos(np.outer(kx, field.x - lxn / 2.0))
+        # cos_y = np.cos(np.outer(ky, field.y - lyn / 2.0))
+
+        # Use FFT-consistent grid for reconstruction: the FFT in xnm
+        # assumes sample spacing px = L/N, so positions must be j*px
+        # (not linspace which gives j*L/(N-1) and causes phase errors).
+        x_recon = np.arange(field.nx, dtype=np.float64) * field.px  # instead of field.x
+        y_recon = np.arange(field.ny, dtype=np.float64) * field.py  # instead of field.y
+        sin_x = np.sin(np.outer(kx, x_recon - lxn / 2.0))
+        sin_y = np.sin(np.outer(ky, y_recon - lyn / 2.0))
+        cos_x = np.cos(np.outer(kx, x_recon - lxn / 2.0))
+        cos_y = np.cos(np.outer(ky, y_recon - lyn / 2.0))
     elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
         k2[0, 0] = (np.pi / lxn) ** 2 + (np.pi / lyn) ** 2
         k2[1, 0] = (np.pi / lxn) ** 2 + (np.pi / lyn) ** 2
@@ -322,8 +332,16 @@ def b3d(
         bfield = np.zeros((2 * field.ny, 2 * field.nx, field.nz, 3))
         dbz = np.zeros((2 * field.ny, 2 * field.nx, field.nz, 3))
 
-        x_big = np.arange(2.0 * field.nx) * 2.0 * xmax / (2.0 * field.nx - 1) - xmax
-        y_big = np.arange(2.0 * field.ny) * 2.0 * ymax / (2.0 * field.ny - 1) - ymax
+        # x_big = np.arange(2.0 * field.nx) * 2.0 * xmax / (2.0 * field.nx - 1) - xmax
+        # y_big = np.arange(2.0 * field.ny) * 2.0 * ymax / (2.0 * field.ny - 1) - ymax
+
+        # Use FFT-consistent grid for Seehafer domain reconstruction
+        x_big = (
+            np.arange(2 * field.nx, dtype=np.float64) * field.px - field.nx * field.px
+        )  # instead of x_big = np.arange(2.0 * field.nx) * 2.0 * xmax / (2.0 * field.nx - 1) - xmax
+        y_big = (
+            np.arange(2 * field.ny, dtype=np.float64) * field.py - field.ny * field.py
+        )  # instead of y_big = np.arange(2.0 * field.ny) * 2.0 * ymax / (2.0 * field.ny - 1) - ymax
 
         sin_x = np.sin(np.outer(kx, x_big))
         sin_y = np.sin(np.outer(ky, y_big))

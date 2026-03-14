@@ -213,7 +213,6 @@ def plot_magnetogram_3D(
             data.bz,
             20,
             cmap=cmap_magneto,
-            norm=norm_hmi,
             offset=0.0,
         )
 
@@ -327,7 +326,7 @@ def plot_fieldlines_grid(data: Field3dData, ax) -> None:
     nlinesmaxx = math.floor(xmax / dx)
     nlinesmaxy = math.floor(ymax / dy)
 
-    h1 = 1.0 / 100.0  # Initial step length for fieldline3D
+    # h1 = 1.0 / 100.0  # Initial step length for fieldline3D
     eps = 1.0e-8
     # Tolerance to which we require point on field line known for fieldline3D
     hmin = 0.0  # Minimum step length for fieldline3D
@@ -349,7 +348,15 @@ def plot_fieldlines_grid(data: Field3dData, ax) -> None:
             x_start = x_0 + dx * ilinesx
             y_start = y_0 + dy * ilinesy
 
-            if data.bz[int(y_start), int(x_start)] < 0.0:
+            # if data.bz[int(y_start), int(x_start)] < 0.0:
+            # Convert physical coords to pixel indices for bz lookup
+            ix_pixel = int(round(x_start / xmax * (data.nx - 1)))
+            iy_pixel = int(round(y_start / ymax * (data.ny - 1)))
+            ix_pixel = max(0, min(ix_pixel, data.nx - 1))
+            iy_pixel = max(0, min(iy_pixel, data.ny - 1))
+
+            h1 = 1.0 / 100.0  # Reset step length for each field line
+            if data.bz[iy_pixel, ix_pixel] < 0.0:
                 h1 = -h1
 
             ystart = [y_start, x_start, 0.0]
@@ -439,7 +446,7 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
     x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
     y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
 
-    h1 = 1.0 / 100.0  # Initial step length for fieldline3D
+    # h1 = 1.0 / 100.0  # Initial step length for fieldline3D
     eps = 1.0e-8
     # Tolerance to which we require point on field line known for fieldline3D
     hmin = 0.0  # Minimum step length for fieldline3D
@@ -463,7 +470,10 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
                 x_start = ix / (data.nx / xmax)  # + 1.0e-8
                 y_start = iy / (data.ny / ymax)  # + 1.0e-8
                 # print(x_start, y_start)
-                if data.bz[int(y_start), int(x_start)] < 0.0:
+                # if data.bz[int(y_start), int(x_start)] < 0.0:
+                # Use pixel indices (iy, ix) for bz lookup, not physical coords
+                h1 = 1.0 / 100.0  # Reset step length for each field line
+                if data.bz[iy, ix] < 0.0:
                     h1 = -h1
 
                 ystart = [y_start, x_start, 0.0]
