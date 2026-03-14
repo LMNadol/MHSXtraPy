@@ -1,21 +1,16 @@
 from __future__ import annotations
 
-import numpy as np
-
-
-from sunpy.net import Fido, attrs as a
-import sunpy.map
-
 import astropy.units as u
+import matplotlib.pyplot as plt
+import numpy as np
+import sunpy.map
+from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.io.fits import getdata
-from astropy.coordinates import SkyCoord
-
-from matplotlib import rc, colors, ticker
-import matplotlib.pyplot as plt
-from matplotlib.patches import ConnectionPatch
-from matplotlib import cbook
-from matplotlib.patches import Rectangle
+from matplotlib import cbook, colors, rc, ticker
+from matplotlib.patches import ConnectionPatch, Rectangle
+from sunpy.net import Fido
+from sunpy.net import attrs as a
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=True)
