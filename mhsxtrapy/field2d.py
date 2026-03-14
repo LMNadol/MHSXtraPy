@@ -13,12 +13,8 @@ from astropy.io.fits import open as astroopen
 from scipy.interpolate import griddata
 from sunpy.map.sources import AIAMap
 
-# from mhsxtrapy.download import SHARPdata
-
-
-class FluxBalanceState(Enum):
-    BALANCED = "Balanced"
-    UNBALANCED = "Unbalanced"
+from mhsxtrapy.constants import FLUX_BALANCE_THRESHOLD
+from mhsxtrapy.types import FluxBalanceState
 
 
 @dataclass
@@ -176,7 +172,7 @@ class Field2dData:
         y = np.arange(ny, dtype=np.float64) * py
         z = np.arange(nz, dtype=np.float64) * pz
 
-        if np.fabs(check_fluxbalance(image_cut)) < 0.01:
+        if np.fabs(check_fluxbalance(image_cut)) < FLUX_BALANCE_THRESHOLD:
             return Field2dData(
                 nx,
                 ny,
@@ -299,7 +295,7 @@ class Field2dData:
         y = np.arange(ny, dtype=np.float64) * py
         z = np.arange(nz, dtype=np.float64) * pz
 
-        if np.fabs(check_fluxbalance(image.data)) < 0.01:
+        if np.fabs(check_fluxbalance(image.data)) < FLUX_BALANCE_THRESHOLD:
             data2d = Field2dData(
                 nx,
                 ny,

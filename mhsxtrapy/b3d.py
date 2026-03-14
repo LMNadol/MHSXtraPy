@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 import logging
-from enum import Enum
 from typing import Tuple
 
 import numpy as np
 
 from mhsxtrapy.field2d import Field2dData, FluxBalanceState
 from mhsxtrapy.phibar import dphidz, dphidz_low, dphidz_nw, phi, phi_low, phi_nw
-
-
-class WhichSolution(Enum):
-    LOW = "Low"
-    NEUWIE = "Neuwie"
-    ASYMP = "Asymp"
+from mhsxtrapy.types import WhichSolution
 
 
 def seehafer(
