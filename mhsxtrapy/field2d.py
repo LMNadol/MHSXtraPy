@@ -167,11 +167,14 @@ class Field2dData:
         # pz = np.float64(90.0 * 10**-3)
         pz = max(px, py)
 
-        nz = int(np.floor(zmax / pz))
-
-        x = np.arange(nx) * (xmax - xmin) / (nx - 1) - xmin
-        y = np.arange(ny) * (ymax - ymin) / (ny - 1) - ymin
-        z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
+        nz = 140  # int(np.floor(zmax / pz))
+        zmax = (nz - 1) * px
+        # x = np.arange(nx) * (xmax - xmin) / (nx - 1) - xmin
+        # y = np.arange(ny) * (ymax - ymin) / (ny - 1) - ymin
+        # z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
+        x = np.arange(nx, dtype=np.float64) * px
+        y = np.arange(ny, dtype=np.float64) * py
+        z = np.arange(nz, dtype=np.float64) * pz
 
         if np.fabs(check_fluxbalance(image_cut)) < 0.01:
             return Field2dData(
@@ -285,11 +288,16 @@ class Field2dData:
         pz = 90.0 * 10**-3
         # pz = max(px, py)
 
-        nz = int(np.floor(zmax / pz))
+        nz = 225  # int(np.floor(zmax / pz))
+        zmax = (nz - 1) * px
 
-        x = np.arange(nx) * (xmax - xmin) / (nx - 1) - xmin
-        y = np.arange(ny) * (ymax - ymin) / (ny - 1) - ymin
-        z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
+        # x = np.arange(nx) * (xmax - xmin) / (nx - 1) - xmin
+        # y = np.arange(ny) * (ymax - ymin) / (ny - 1) - ymin
+        # z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
+
+        x = np.arange(nx, dtype=np.float64) * px
+        y = np.arange(ny, dtype=np.float64) * py
+        z = np.arange(nz, dtype=np.float64) * pz
 
         if np.fabs(check_fluxbalance(image.data)) < 0.01:
             data2d = Field2dData(

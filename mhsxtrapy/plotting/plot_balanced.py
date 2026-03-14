@@ -7,7 +7,7 @@ from typing import Literal, Tuple
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import colors, rc, colormaps
+from matplotlib import colormaps, colors, rc
 from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
 from mhsxtrapy.field2d import Field2dData
@@ -368,8 +368,8 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
     boxedges[0, 2] = zmin
     boxedges[1, 2] = zmax  # 2 * data.z0  # FOR ZOOM
 
-    for ix in range(0, data.nx, int(data.nx / 20)):
-        for iy in range(0, data.ny, int(data.ny / 20)):
+    for ix in range(0, data.nx, int(data.nx / 50)):
+        for iy in range(0, data.ny, int(data.ny / 50)):
             if sources[iy, ix] != 0 or sinks[iy, ix] != 0:
 
                 x_start = ix / (data.nx / xmax)  # + 1.0e-8
