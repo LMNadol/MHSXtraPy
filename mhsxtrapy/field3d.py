@@ -20,7 +20,9 @@ from mhsxtrapy.constants import (
     L,
 )
 from mhsxtrapy.field2d import Field2dData, FluxBalanceState
-from mhsxtrapy.nff2ff import dfdz_low, dfdz_nw, f_low, f_nw
+from mhsxtrapy.solutions import get_solution
+from mhsxtrapy.solutions.low import dfdz_low, f_low
+from mhsxtrapy.solutions.neuwie import dfdz_nw, f_nw
 
 
 @dataclass
@@ -217,6 +219,10 @@ class Field3dData:
             np.ndarray: 3D variation in pressure
         """
 
+        sol = get_solution(self.solution)
+        f = sol.f
+        dfdz = sol.dfdz
+
         if self.flux_balance_state == FluxBalanceState.BALANCED:
             bz_matrix = self.field[:, :, :, 2]
         elif self.flux_balance_state == FluxBalanceState.UNBALANCED:
@@ -235,7 +241,7 @@ class Field3dData:
 
         if (
             self.solution == WhichSolution.NEUWIE
-            or self.solution == WhichSolution.ASYMP
+            or self.solution == WhichSolution.NANEU
         ):
 
             assert (
@@ -243,7 +249,7 @@ class Field3dData:
             )
 
             return (
-                -f_nw(z_matrix, self.z0, self.deltaz, self.a, self.b)  # normalised
+                -f(z_matrix, self.z0, self.deltaz, self.a, self.b)  # normalised
                 / 2.0
                 * bz_matrix**2.0
                 / B0**2.0
@@ -252,11 +258,11 @@ class Field3dData:
 
             assert self.kappa is not None
 
-            return -f_low(z_matrix, self.a, self.kappa) / 2.0 * bz_matrix**2.0 / B0**2.0
+            return -f(z_matrix, self.a, self.kappa) / 2.0 * bz_matrix**2.0 / B0**2.0
 
         else:
             raise ValueError(
-                f"Invalid solution: {self.solution}. Expected 'LOW' or 'NEUWIE' or 'ASYMP'."
+                f"Invalid solution: {self.solution}. Expected 'LOW' or 'NEUWIE' or 'NANEU'."
             )
 
     @cached_property
@@ -273,6 +279,9 @@ class Field3dData:
         Returns:
             np.ndarray: 3D variation in density
         """
+        sol = get_solution(self.solution)
+        f = sol.f
+        dfdz = sol.dfdz
 
         if self.flux_balance_state == FluxBalanceState.BALANCED:
             bz_matrix = self.field[:, :, :, 2]
@@ -305,7 +314,7 @@ class Field3dData:
 
         if (
             self.solution == WhichSolution.NEUWIE
-            or self.solution == WhichSolution.ASYMP
+            or self.solution == WhichSolution.NANEU
         ):
 
             assert (
@@ -313,11 +322,11 @@ class Field3dData:
             )
 
             return (
-                dfdz_nw(z_matrix, self.z0, self.deltaz, self.a, self.b)  # normalised
+                dfdz(z_matrix, self.z0, self.deltaz, self.a, self.b)  # normalised
                 / 2.0
                 * bz_matrix**2
                 / B0**2
-                + f_nw(z_matrix, self.z0, self.deltaz, self.a, self.b)  # normalised
+                + f(z_matrix, self.z0, self.deltaz, self.a, self.b)  # normalised
                 * bdotbz_matrix  # normalised
                 / B0**2
             )
@@ -326,12 +335,12 @@ class Field3dData:
             assert self.kappa is not None
 
             return (
-                dfdz_low(z_matrix, self.a, self.kappa) / 2.0 * bz_matrix**2 / B0**2
-                + f_low(z_matrix, self.a, self.kappa) * bdotbz_matrix / B0**2
+                dfdz(z_matrix, self.a, self.kappa) / 2.0 * bz_matrix**2 / B0**2
+                + f(z_matrix, self.a, self.kappa) * bdotbz_matrix / B0**2
             )
         else:
             raise ValueError(
-                f"Invalid solution: {self.solution}. Expected 'LOW' or 'NEUWIE' or 'ASYMP'."
+                f"Invalid solution: {self.solution}. Expected 'LOW' or 'NEUWIE' or 'NANEU'."
             )
 
     @cached_property
@@ -685,6 +694,10 @@ def j3d(field3d: Field3dData) -> np.ndarray:
         np.ndarray: current density
     """
 
+    sol = get_solution(field3d.solution)
+    f = sol.f
+    dfdz = sol.dfdz
+
     j = np.zeros_like(field3d.field)
 
     j[:, :, :, 2] = field3d.alpha * field3d.field[:, :, :, 2] * 10**-4
@@ -693,7 +706,7 @@ def j3d(field3d: Field3dData) -> np.ndarray:
 
     if (
         field3d.solution == WhichSolution.NEUWIE
-        or field3d.solution == WhichSolution.ASYMP
+        or field3d.solution == WhichSolution.NANEU
     ):
 
         assert (
@@ -702,18 +715,18 @@ def j3d(field3d: Field3dData) -> np.ndarray:
             and field3d.b is not None
         )
 
-        f_matrix[:, :, :] = f_nw(
+        f_matrix[:, :, :] = f(
             field3d.z, field3d.z0, field3d.deltaz, field3d.a, field3d.b
         )
     elif field3d.solution == WhichSolution.LOW:
 
         assert field3d.kappa is not None
 
-        f_matrix[:, :, :] = f_low(field3d.z, field3d.a, field3d.kappa)
+        f_matrix[:, :, :] = f(field3d.z, field3d.a, field3d.kappa)
 
     else:
         raise ValueError(
-            f"Invalid solution: {field3d.solution}. Expected 'LOW' or 'NEUWIE' or 'ASYMP'."
+            f"Invalid solution: {field3d.solution}. Expected 'LOW' or 'NEUWIE' or 'NANEU'."
         )
 
     j[:, :, :, 1] = (

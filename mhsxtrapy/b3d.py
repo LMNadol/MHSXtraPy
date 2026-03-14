@@ -6,7 +6,7 @@ from typing import Tuple
 import numpy as np
 
 from mhsxtrapy.field2d import Field2dData, FluxBalanceState
-from mhsxtrapy.phibar import dphidz, dphidz_low, dphidz_nw, phi, phi_low, phi_nw
+from mhsxtrapy.solutions import get_solution
 from mhsxtrapy.types import WhichSolution
 
 
@@ -159,11 +159,11 @@ def get_phi_dphi(
         p_arr (np.ndarray): array containing the parameter p, i.e. gamma in L Nadol PhD thesis
         nf (int): number of Fourier modes in both horizontal directions
         nz (int): number of grid points in vertical direction
-        solution (WhichSolution): Enum for solution selection, either "Low", "Neuwie" or "Asymp"
+        solution (WhichSolution): Enum for solution selection, either "Low", "Neuwie" or "Naneu"
         z0 (float | None, optional): Centre of region over which transition from non-force-free to force-free
-            takes place in "Neuwie" and "Asymp" solution. Defaults to None.
+            takes place in "Neuwie" and "Naneu" solution. Defaults to None.
         deltaz (float | None, optional): Width of region over which transition from non-force-free to force-free
-            takes place in "Neuwie" and "Asymp". Defaults to None.
+            takes place in "Neuwie" and "Naneu". Defaults to None.
         kappa (float | None, optional): Parameter for "Low" solution setting the speed with which the
             exponential function declines. Defaults to None.
 
@@ -173,25 +173,20 @@ def get_phi_dphi(
     Returns:
         _type_: Arrays containig bar-Phi and its first derivative w.r.t. z.
     """
-
     phi_arr = np.zeros((nf, nf, nz))
     dphidz_arr = np.zeros((nf, nf, nz))
 
-    if solution == WhichSolution.ASYMP:
+    sol = get_solution(solution)
+    phi = sol.phi
+    dphidz = sol.dphidz
+
+    if solution == WhichSolution.NANEU or solution == WhichSolution.NEUWIE:
 
         assert z0 is not None and deltaz is not None
 
         for iz, z in enumerate(z_arr):
             phi_arr[:, :, iz] = phi(z, p_arr, q_arr, z0, deltaz)
             dphidz_arr[:, :, iz] = dphidz(z, p_arr, q_arr, z0, deltaz)
-
-    elif solution == WhichSolution.NEUWIE:
-
-        assert z0 is not None and deltaz is not None
-
-        for iz, z in enumerate(z_arr):
-            phi_arr[:, :, iz] = phi_nw(z, p_arr, q_arr, z0, deltaz)
-            dphidz_arr[:, :, iz] = dphidz_nw(z, p_arr, q_arr, z0, deltaz)
 
     elif solution == WhichSolution.LOW:
 
@@ -202,13 +197,8 @@ def get_phi_dphi(
                 q = q_arr[iy, ix]
                 p = p_arr[iy, ix]
                 for iz, z in enumerate(z_arr):
-                    phi_arr[iy, ix, iz] = phi_low(z, p, q, kappa)
-                    dphidz_arr[iy, ix, iz] = dphidz_low(z, p, q, kappa)
-
-    else:
-        raise ValueError(
-            f"Invalid solution: {self.solution}. Expected 'LOW' or 'NEUWIE' or 'ASYMP'."
-        )
+                    phi_arr[iy, ix, iz] = phi(z, p, q, kappa)
+                    dphidz_arr[iy, ix, iz] = dphidz(z, p, q, kappa)
 
     return phi_arr, dphidz_arr
 
@@ -235,12 +225,12 @@ def b3d(
         field (Field2dData): Field2dData object containing all the boundary condition information
         alpha (float): force-free parameter
         a (float): amplitude parameter
-        solution (WhichSolution): Enum for solution selection, either "Low", "Neuwie" or "Asymp"
+        solution (WhichSolution): Enum for solution selection, either "Low", "Neuwie" or "Naneu"
         b (float | None, optional): "switch-off" parameter
         z0 (float | None, optional): Centre of region over which transition from non-force-free to force-free
-            takes place in "Neuwie" and "Asymp" solution. Defaults to None.
+            takes place in "Neuwie" and "Naneu" solution. Defaults to None.
         deltaz (float | None, optional): Width of region over which transition from non-force-free to force-free
-            takes place in "Neuwie" and "Asymp". Defaults to None.
+            takes place in "Neuwie" and "Naneu". Defaults to None.
         kappa (float | None, optional): Parameter for "Low" solution setting the speed with which the
             exponential function declines. Defaults to None.
 
@@ -346,7 +336,7 @@ def b3d(
             f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
         )
 
-    if solution == WhichSolution.NEUWIE or solution == WhichSolution.ASYMP:
+    if solution == WhichSolution.NEUWIE or solution == WhichSolution.NANEU:
         assert z0 is not None and deltaz is not None and b is not None
         p = 0.5 * deltaz * np.sqrt(k2 * (1.0 - a - a * b) - alpha**2)
         q = 0.5 * deltaz * np.sqrt(k2 * (1.0 - a + a * b) - alpha**2)
@@ -357,7 +347,7 @@ def b3d(
     else:
         logging.warning(f"Unknown solution type: {solution}.")
         raise ValueError(
-            f"Unknown solution type: {solution}. Expected 'LOW' or 'NEUWIE' or 'ASYMP'."
+            f"Unknown solution type: {solution}. Expected 'LOW' or 'NEUWIE' or 'NANEU'."
         )
 
     phi, dphi = get_phi_dphi(

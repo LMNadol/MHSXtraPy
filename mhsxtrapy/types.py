@@ -2,9 +2,9 @@ from enum import Enum
 
 
 class WhichSolution(Enum):
-    LOW = "Low"
-    NEUWIE = "Neuwie"
-    ASYMP = "Asymp"
+    LOW = "low"
+    NEUWIE = "neuwie"
+    NANEU = "naneu"
 
 
 class FluxBalanceState(Enum):
