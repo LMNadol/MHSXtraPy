@@ -19,3 +19,6 @@ dependencies = [
     "sunpy>=7.1.0",
     "zeep>=4.3.2",
 ]
+
+[tool.setuptools.packages.find]
+include = ["mhsxtrapy*"]
