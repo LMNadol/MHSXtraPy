@@ -194,7 +194,10 @@ class Field3dData:
             np.ndarray: vertical background temperature profile
         """
 
-        assert self.z0 is not None and self.deltaz is not None
+        if self.z0 is None or self.deltaz is None:
+            raise ValueError(
+                "z0 and deltaz must not be None to compute background temperature."
+            )
 
         T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(self.z0 / self.deltaz)) / (
             1.0 + np.tanh(self.z0 / self.deltaz)
@@ -215,7 +218,10 @@ class Field3dData:
             np.ndarray: vertical background pressure profile
         """
 
-        assert self.z0 is not None and self.deltaz is not None
+        if self.z0 is None or self.deltaz is None:
+            raise ValueError(
+                "z0 and deltaz must not be None to compute background pressure."
+            )
 
         T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(self.z0 / self.deltaz)) / (
             1.0 + np.tanh(self.z0 / self.deltaz)
@@ -256,7 +262,10 @@ class Field3dData:
             np.ndarray: vertical background density profile
         """
 
-        assert self.z0 is not None and self.deltaz is not None
+        if self.z0 is None or self.deltaz is None:
+            raise ValueError(
+                "z0 and deltaz must not be None to compute background density."
+            )
 
         T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(self.z0 / self.deltaz)) / (
             1.0 + np.tanh(self.z0 / self.deltaz)
@@ -391,7 +400,10 @@ class Field3dData:
             np.ndarray: full 3D density, sum of background and variation
         """
 
-        assert self.z0 is not None and self.deltaz is not None and self.b is not None
+        if self.z0 is None or self.deltaz is None or self.b is None:
+            raise ValueError(
+                "z0, deltaz, and b must not be None to compute full density."
+            )
 
         T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(self.z0 / self.deltaz)) / (
             1.0 + np.tanh(self.z0 / self.deltaz)

@@ -530,11 +530,15 @@ def b3d(
         solution == WhichSolution.NEUKIRCH_WIEGELMANN
         or solution == WhichSolution.NADOL_NEUKIRCH
     ):
-        assert z0 is not None and deltaz is not None and b is not None
+        if z0 is None or deltaz is None or b is None:
+            raise ValueError(
+                "z0, deltaz, and b must not be None for NEUKIRCH_WIEGELMANN / NADOL_NEUKIRCH solution."
+            )
         p = 0.5 * deltaz * np.sqrt(k2 * (1.0 - a - a * b) - alpha**2)
         q = 0.5 * deltaz * np.sqrt(k2 * (1.0 - a + a * b) - alpha**2)
     elif solution == WhichSolution.LOW:
-        assert kappa is not None
+        if kappa is None:
+            raise ValueError("kappa must not be None for LOW solution.")
         p = 2.0 / kappa * np.sqrt(k2 - alpha**2)
         q = 2.0 / kappa * np.sqrt(k2 * a)
     else:

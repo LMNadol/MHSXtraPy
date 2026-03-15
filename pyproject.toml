@@ -1,7 +1,7 @@
 [project]
 name = "mhsxtrapy"
 version = "0.1.0"
-description = "Add your description here"
+description = "Magnetohydrostatic extrapolation of photospheric magnetic field data into the solar corona"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
@@ -14,12 +14,24 @@ dependencies = [
     "mpl-animators>=1.2.4",
     "numba>=0.64.0",
     "numpy>=2.4.3",
-    "pre-commit>=4.5.1",
     "reproject>=0.19.0",
     "scipy>=1.17.1",
     "sunpy>=7.1.0",
     "zeep>=4.3.2",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=4.5.1",
+]
+test = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+]
+
 [tool.setuptools.packages.find]
 include = ["mhsxtrapy*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
