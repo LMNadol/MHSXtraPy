@@ -27,8 +27,6 @@ def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
     """
 
     B0 = data.field[:, :, 0, 2].max()
-    # x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
-    # y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
 
     x, y, z = _get_coordinates(data)
     x_grid, y_grid = np.meshgrid(x, y)
@@ -47,8 +45,6 @@ def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
         abs(data.dpressure[:, :, index]) * (B0 * 10**-4) ** 2.0 / MU0,
         12,
         cmap=cmap_pressure,
-        # vmin = data3d.dpressure[:, :, iiz].min(),
-        # vmax = data3d.dpressure[:, :, iiz].max(),
     )
     ax.set_xlabel(r"$x$ [Mm]", size=14)
     ax.set_ylabel(r"$y$ [Mm]", size=14)
@@ -86,8 +82,6 @@ def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
     """
 
     B0 = data.field[:, :, 0, 2].max()
-    # x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
-    # y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
 
     x, y, z = _get_coordinates(data)
     x_grid, y_grid = np.meshgrid(x, y)
@@ -106,8 +100,6 @@ def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
         abs(data.ddensity[:, :, index]) * (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L),
         12,
         cmap=cmap_density,
-        # vmin = data3d.dpressure[:, :, iiz].min(),
-        # vmax = data3d.dpressure[:, :, iiz].max(),
     )
     ax.set_xlabel(r"$x$ [Mm]", size=14)
     ax.set_ylabel(r"$y$ [Mm]", size=14)

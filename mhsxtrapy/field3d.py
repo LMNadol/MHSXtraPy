@@ -46,7 +46,7 @@ class Field3dData:
     field       :   3D magnetic field vector of size (ny, nx, nz, 3,) which contains magnetic field data in
                     Gauss in the shapes By = field(:, :, :, 0), Bx = field(:, :, :, 1) and
                     Bz = field(:, :, :, 2).
-    dfield      :   3D vector of size (ny, nx, nz, 3,) containing partial derivatives of Bz in Gauss in the
+    grad_bz      :   3D vector of size (ny, nx, nz, 3,) containing partial derivatives of Bz in Gauss in the
                     shape Bzdy = field(:, :, :, 0), Bzdx = field(:, :, :, 1) and Bzdz = field(:, :, :, 2).
     a           :   Amplitude parameter of function f(z).
     b           :   Switch parameter of function f(z).
@@ -74,7 +74,7 @@ class Field3dData:
     z: np.ndarray
     bz: np.ndarray
     field: np.ndarray
-    dfield: np.ndarray
+    grad_bz: np.ndarray
 
     flux_balance_state: FluxBalanceState
 
@@ -315,19 +315,19 @@ class Field3dData:
         if self.flux_balance_state == FluxBalanceState.BALANCED:
             bz_matrix = self.field[:, :, :, 2]
             bdotbz_matrix = (
-                self.field[:, :, :, 0] * self.dfield[:, :, :, 0]
-                + self.field[:, :, :, 1] * self.dfield[:, :, :, 1]
-                + self.field[:, :, :, 2] * self.dfield[:, :, :, 2]
+                self.field[:, :, :, 0] * self.grad_bz[:, :, :, 0]
+                + self.field[:, :, :, 1] * self.grad_bz[:, :, :, 1]
+                + self.field[:, :, :, 2] * self.grad_bz[:, :, :, 2]
             )  # in Gauss**2
         elif self.flux_balance_state == FluxBalanceState.UNBALANCED:
             bz_matrix = self.field[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 2]
             bdotbz_matrix = (
                 self.field[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 0]
-                * self.dfield[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 0]
+                * self.grad_bz[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 0]
                 + self.field[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 1]
-                * self.dfield[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 1]
+                * self.grad_bz[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 1]
                 + self.field[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 2]
-                * self.dfield[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 2]
+                * self.grad_bz[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 2]
             )  # in Gauss**2
         else:
             raise ValueError(
@@ -447,7 +447,7 @@ def calculate_magfield(
         z=field2d.z,
         bz=field2d.bz,
         field=mf3d,
-        dfield=dbz3d,
+        grad_bz=dbz3d,
         flux_balance_state=field2d.flux_balance_state,
         alpha=alpha,
         a=a,
@@ -672,17 +672,17 @@ def j3d(field3d: Field3dData) -> np.ndarray:
 
     j[:, :, :, 2] = field3d.alpha * field3d.field[:, :, :, 2] * 10**-4
 
-    f_matrix = np.zeros_like(field3d.dfield[:, :, :, 0])
+    f_matrix = np.zeros_like(field3d.grad_bz[:, :, :, 0])
     f_matrix[:, :, :] = sol.f(field3d.z)
 
     j[:, :, :, 1] = (
         field3d.alpha * field3d.field[:, :, :, 1] * 10**-4
-        + f_matrix * field3d.dfield[:, :, :, 0] * 10**-4
+        + f_matrix * field3d.grad_bz[:, :, :, 0] * 10**-4
     )
 
     j[:, :, :, 0] = (
         field3d.alpha * field3d.field[:, :, :, 0] * 10**-4
-        - f_matrix * field3d.dfield[:, :, :, 1] * 10**-4
+        - f_matrix * field3d.grad_bz[:, :, :, 1] * 10**-4
     )
     return j / MU0 * L
 

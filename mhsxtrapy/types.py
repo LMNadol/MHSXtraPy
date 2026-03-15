@@ -14,3 +14,8 @@ class WhichSolution(Enum):
 class FluxBalanceState(Enum):
     BALANCED = "Balanced"
     UNBALANCED = "Unbalanced"
+
+
+class Instrument(Enum):
+    SOLAR_ORBITER = "Solar Orbiter"
+    SDO = "SDO"

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
 
+from mhsxtrapy.constants import DEFAULT_N_LINES, DEFAULT_PIXEL_STRIDE
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.plotting.fieldline3d import fieldline3d
 from mhsxtrapy.types import FluxBalanceState
@@ -34,6 +35,10 @@ def plot_magnetogram_3D(
     view: Literal["los", "side", "angular"],
     footpoints: Literal["all", "active-regions"],
     boundary: Literal["FeI-6173", "EUV"] = "FeI-6173",
+    n_lines_x: int | None = DEFAULT_N_LINES,
+    n_lines_y: int | None = DEFAULT_N_LINES,
+    pixel_stride_x: int | None = DEFAULT_PIXEL_STRIDE,
+    pixel_stride_y: int | None = DEFAULT_PIXEL_STRIDE,
 ):
     """
     Create figure of magnetic field line from Field3dData object. Specify angle of view and optional zoom
@@ -61,9 +66,6 @@ def plot_magnetogram_3D(
         data.z[0],
         data.z[-1],
     )
-
-    # x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
-    # y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
 
     x, y, z = _get_coordinates(data)
     x_grid, y_grid = np.meshgrid(x, y)
@@ -113,10 +115,10 @@ def plot_magnetogram_3D(
     set_axis_labels(ax, x_length, y_length, z_length)
 
     if footpoints == "all":
-        plot_fieldlines_grid(data, ax)
+        plot_fieldlines_grid(data, ax, n_lines_x, n_lines_y)
     elif footpoints == "active-regions":
         sinks, sources = detect_footpoints(data)
-        plot_fieldlines_AR(data, sinks, sources, ax)
+        plot_fieldlines_AR(data, sinks, sources, ax, pixel_stride_x, pixel_stride_y)
     else:
         raise ValueError(
             f"Invalid footpoints option: {footpoints}. Choose from 'all' or 'active-regions'."
@@ -173,7 +175,7 @@ def plot_magnetogram_3D(
     plt.show()
 
 
-def plot_fieldlines_grid(data: Field3dData, ax) -> None:
+def plot_fieldlines_grid(data: Field3dData, ax, n_lines_x, n_lines_y) -> None:
     """
     Plot field lines on grid.
 
@@ -191,15 +193,12 @@ def plot_fieldlines_grid(data: Field3dData, ax) -> None:
         data.z[-1],
     )
 
-    # x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
-    # y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
-
     x, y, z = _get_coordinates(data)
 
     x_0 = 1.0e-8
     y_0 = 1.0e-8
-    dx = xmax / 15.0
-    dy = ymax / 15.0
+    dx = xmax / n_lines_x
+    dy = ymax / n_lines_y
 
     nlinesmaxx = math.floor(xmax / dx)
     nlinesmaxy = math.floor(ymax / dy)
@@ -209,17 +208,6 @@ def plot_fieldlines_grid(data: Field3dData, ax) -> None:
     # Tolerance to which we require point on field line known for fieldline3D
     hmin = 0.0  # Minimum step length for fieldline3D
     hmax = 1.0  # Maximum step length for fieldline3D
-
-    # # Limit fieldline plot to original data size (rather than Seehafer size)
-    # boxedges = np.zeros((2, 3))
-
-    # # # Y boundaries must come first, X second due to switched order explained above
-    # boxedges[0, 0] = ymin
-    # boxedges[1, 0] = ymax
-    # boxedges[0, 1] = xmin
-    # boxedges[1, 1] = xmax
-    # boxedges[0, 2] = zmin
-    # boxedges[1, 2] = zmax
 
     boxedges = _make_boxedges(data)
 
@@ -280,7 +268,14 @@ def plot_fieldlines_grid(data: Field3dData, ax) -> None:
                 )
 
 
-def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray, ax):
+def plot_fieldlines_AR(
+    data: Field3dData,
+    sinks: np.ndarray,
+    sources: np.ndarray,
+    ax,
+    pixel_stride_x,
+    pixel_stride_y,
+):
     """
     Plot field lines starting at detected foot points around poles.
 
@@ -308,27 +303,15 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
     hmin = 0.0  # Minimum step length for fieldline3D
     hmax = 1.0  # Maximum step length for fieldline3D
 
-    # Limit fieldline plot to original data size (rather than Seehafer size)
-    # boxedges = np.zeros((2, 3))
-
-    # # # Y boundaries must come first, X second due to switched order explained above
-    # boxedges[0, 0] = ymin
-    # boxedges[1, 0] = ymax
-    # boxedges[0, 1] = xmin
-    # boxedges[1, 1] = xmax
-    # boxedges[0, 2] = zmin
-    # boxedges[1, 2] = zmax  # 2 * data.z0  # FOR ZOOM
-
     boxedges = _make_boxedges(data)
 
-    for ix in range(0, data.nx, 4):
-        for iy in range(0, data.ny, 4):
+    for ix in range(0, data.nx, pixel_stride_x):
+        for iy in range(0, data.ny, pixel_stride_y):
             if sources[iy, ix] != 0 or sinks[iy, ix] != 0:
 
                 x_start = ix / (data.nx / xmax)  # + 1.0e-8
                 y_start = iy / (data.ny / ymax)  # + 1.0e-8
-                # print(x_start, y_start)
-                # if data.bz[int(y_start), int(x_start)] < 0.0:
+
                 # Use pixel indices (iy, ix) for bz lookup, not physical coords
                 h1 = 1.0 / 100.0  # Reset step length for each field line
                 if data.bz[iy, ix] < 0.0:

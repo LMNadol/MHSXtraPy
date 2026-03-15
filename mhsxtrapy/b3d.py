@@ -130,15 +130,8 @@ def xnm(
 
     signal = np.fft.fftshift(np.fft.fft2(bz) / nx / ny)
 
-    for ix in range(0, nx, 2):
-        for iy in range(1, ny, 2):
-            temp = signal[iy, ix]
-            signal[iy, ix] = -temp
-
-    for ix in range(1, nx, 2):
-        for iy in range(0, ny, 2):
-            temp = signal[iy, ix]
-            signal[iy, ix] = -temp
+    signal[1::2, ::2] *= -1
+    signal[::2, 1::2] *= -1
 
     if nx % 2 == 0:
         centre_x = int(nx / 2)

@@ -10,7 +10,7 @@ from matplotlib import rc
 from scipy.interpolate import interp1d
 from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
-from mhsxtrapy.constants import G_SOLAR, MU0, L
+from mhsxtrapy.constants import DEFAULT_N_LINES, DEFAULT_PIXEL_STRIDE, G_SOLAR, MU0, L
 from mhsxtrapy.field2d import Field2dData
 from mhsxtrapy.field3d import Field3dData
 
@@ -210,6 +210,10 @@ def plot_magnetogram_3D(
     view: Literal["los", "side", "angular"],
     footpoints: Literal["all", "active-regions"],
     boundary: Literal["FeI-6173", "EUV"] = "FeI-6173",
+    n_lines_x: int | None = DEFAULT_N_LINES,
+    n_lines_y: int | None = DEFAULT_N_LINES,
+    pixel_stride_x: int | None = DEFAULT_PIXEL_STRIDE,
+    pixel_stride_y: int | None = DEFAULT_PIXEL_STRIDE,
 ):
     """
     Wrapper function for 3D magentic field plotting.
@@ -220,7 +224,16 @@ def plot_magnetogram_3D(
         footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
     """
 
-    plot_3D(data, view, footpoints, boundary)
+    plot_3D(
+        data,
+        view,
+        footpoints,
+        boundary,
+        n_lines_x,
+        n_lines_y,
+        pixel_stride_x,
+        pixel_stride_y,
+    )
 
 
 def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:

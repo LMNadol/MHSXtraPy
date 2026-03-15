@@ -27,6 +27,7 @@ class LowSolution(Solution):
         return dfdz_low(z, self.a, self.kappa)
 
 
+# @njit
 def phi_low(z: np.float64, p: np.float64, q: np.float64, kappa: float) -> np.float64:
     """
     Returns solution of ODE (18) in Neukirch and Wiegelmann (2019)
