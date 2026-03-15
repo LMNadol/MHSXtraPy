@@ -1,5 +1,18 @@
 # Solar Atmosphere constants
 
+__all__ = [
+    "T_PHOTOSPHERE",
+    "T_CORONA",
+    "G_SOLAR",
+    "KB",
+    "MBAR",
+    "RHO0",
+    "P0",
+    "MU0",
+    "L",
+    "FLUX_BALANCE_THRESHOLD",
+]
+
 
 T_PHOTOSPHERE = 5600.0  # Photospheric temperature
 T_CORONA = 2.0 * 10.0**6  # Coronal temperature

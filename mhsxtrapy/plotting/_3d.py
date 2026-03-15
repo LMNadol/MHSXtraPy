@@ -9,7 +9,7 @@ import numpy as np
 from matplotlib import rc
 
 from mhsxtrapy.field3d import Field3dData
-from mhsxtrapy.msat.pyvis.fieldline3d import fieldline3d
+from mhsxtrapy.plotting.fieldline3d import fieldline3d
 from mhsxtrapy.types import FluxBalanceState
 
 from ._core import (
@@ -25,6 +25,8 @@ from ._core import (
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=True)
 plt.rcParams["text.usetex"] = False
+
+__all__ = ["plot_magnetogram_3D", "plot_fieldlines_grid", "plot_fieldlines_AR"]
 
 
 def plot_magnetogram_3D(
@@ -74,7 +76,7 @@ def plot_magnetogram_3D(
     ax = fig.figure.add_subplot(111, projection="3d")
 
     if boundary == "EUV":
-        C = ax.contourf(
+        ax.contourf(
             x_grid,
             y_grid,
             data.EUV,
@@ -84,7 +86,7 @@ def plot_magnetogram_3D(
             offset=0.0,
         )
     else:
-        C = ax.contourf(
+        ax.contourf(
             x_grid,
             y_grid,
             data.bz,
@@ -105,11 +107,7 @@ def plot_magnetogram_3D(
     x_length = abs(xmax - xmin)
     y_length = abs(ymax - ymin)
     z_length = abs(zmax - zmin)
-    max_length = max(x_length, y_length, z_length)
-
-    x_relative = x_length / max_length
-    y_relative = y_length / max_length
-    z_relative = z_length / max_length  # type: ignore
+    # max_length = max(x_length, y_length, z_length)
 
     # Set axis labels with dynamic positioning
     set_axis_labels(ax, x_length, y_length, z_length)
@@ -184,7 +182,7 @@ def plot_fieldlines_grid(data: Field3dData, ax) -> None:
         ax (_type_): previous plotting environment
     """
 
-    xmin, xmax, ymin, ymax, zmin, zmax = (
+    _, xmax, _, ymax, _, _ = (
         data.x[0],
         data.x[-1],
         data.y[0],
@@ -293,7 +291,7 @@ def plot_fieldlines_AR(data: Field3dData, sinks: np.ndarray, sources: np.ndarray
         ax (_type_): previous plotting environment
     """
 
-    xmin, xmax, ymin, ymax, zmin, zmax = (
+    _, xmax, _, ymax, _, _ = (
         data.x[0],
         data.x[-1],
         data.y[0],

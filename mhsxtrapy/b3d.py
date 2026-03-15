@@ -10,6 +10,19 @@ from mhsxtrapy.field2d import Field2dData, FluxBalanceState
 from mhsxtrapy.solutions import get_solution
 from mhsxtrapy.types import WhichSolution
 
+__all__ = [
+    "FourierCoefficients",
+    "TrigBasis",
+    "FourierMeta",
+    "FourierBasis",
+    "MagneticField",
+    "seehafer",
+    "xnm",
+    "get_phi_dphi",
+    "compute_wavenumbers",
+    "b3d",
+]
+
 
 @dataclass
 class FourierCoefficients:
@@ -492,10 +505,10 @@ def b3d(
 
     if field.flux_balance_state == FluxBalanceState.BALANCED:
         nf = int(np.floor(field.nf / 2))
-        l = 1.0
+        ell = 1.0
     elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
         nf = field.nf
-        l = 2.0
+        ell = 2.0
     else:
         raise ValueError(
             f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
@@ -503,10 +516,10 @@ def b3d(
 
     # xmax, ymax = field.x[-1], field.y[-1]
 
-    lx = field.nx * field.px * l
-    ly = field.ny * field.py * l
-    lxn = lx / l
-    lyn = ly / l
+    lx = field.nx * field.px * ell
+    ly = field.ny * field.py * ell
+    lxn = lx / ell
+    lyn = ly / ell
 
     kx, ky, k2 = compute_wavenumbers(
         field.nx, field.ny, field.px, field.py, nf, field.flux_balance_state, lxn, lyn

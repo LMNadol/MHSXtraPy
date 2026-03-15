@@ -14,6 +14,14 @@ from sunpy.map.sources import AIAMap
 from mhsxtrapy.constants import FLUX_BALANCE_THRESHOLD
 from mhsxtrapy.types import FluxBalanceState
 
+__all__ = [
+    "Field2dData",
+    "check_fluxbalance",
+    "alpha_HS04",
+    "resize_aia",
+    "maximal_a",
+]
+
 
 @dataclass
 class Field2dData:
@@ -173,8 +181,6 @@ class Field2dData:
 
             hdr = data[0].header  # type: ignore
             dist = hdr["DSUN_OBS"]
-            px_unit = hdr["CUNIT1"]
-            py_unit = hdr["CUNIT2"]
             px_arcsec = hdr["CDELT1"]
             py_arcsec = hdr["CDELT2"]
 
@@ -192,19 +198,10 @@ class Field2dData:
         px = px_radians * dist_Mm
         py = py_radians * dist_Mm
 
-        xmin = 0.0
-        ymin = 0.0
-        zmin = 0.0
-
-        xmax = nx * px
-        ymax = ny * py
-        zmax = 20.0
-
         # pz = np.float64(90.0 * 10**-3)
         pz = max(px, py)
 
         nz = 140  # int(np.floor(zmax / pz))
-        zmax = (nz - 1) * px
         # x = np.arange(nx) * (xmax - xmin) / (nx - 1) - xmin
         # y = np.arange(ny) * (ymax - ymin) / (ny - 1) - ymin
         # z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
@@ -296,8 +293,6 @@ class Field2dData:
         image = hmi_image.submap(left_corner, top_right=right_corner)
 
         dist = hdr["DSUN_OBS"]
-        px_unit = hdr["CUNIT1"]
-        py_unit = hdr["CUNIT2"]
         px_arcsec = hdr["CDELT1"]
         py_arcsec = hdr["CDELT2"]
 
@@ -313,19 +308,10 @@ class Field2dData:
         px = px_radians * dist_Mm
         py = py_radians * dist_Mm
 
-        xmin = 0.0
-        ymin = 0.0
-        zmin = 0.0
-
-        xmax = nx * px
-        ymax = ny * py
-        zmax = 20.0
-
         pz = 90.0 * 10**-3
         # pz = max(px, py)
 
         nz = 225  # int(np.floor(zmax / pz))
-        zmax = (nz - 1) * px
 
         # x = np.arange(nx) * (xmax - xmin) / (nx - 1) - xmin
         # y = np.arange(ny) * (ymax - ymin) / (ny - 1) - ymin
@@ -435,20 +421,20 @@ def maximal_a(field: Field2dData, alpha: float, b: float) -> float:
     from mhsxtrapy.b3d import compute_wavenumbers
 
     if field.flux_balance_state == FluxBalanceState.BALANCED:
-        l = 1.0
+        ell = 1.0
         nf = int(np.floor(field.nf / 2))
     elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
-        l = 2.0
+        ell = 2.0
         nf = field.nf
     else:
         raise ValueError(
             f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
         )
 
-    lx = field.nx * field.px * l
-    ly = field.ny * field.py * l
-    lxn = lx / l
-    lyn = ly / l
+    lx = field.nx * field.px * ell
+    ly = field.ny * field.py * ell
+    lxn = lx / ell
+    lyn = ly / ell
 
     kx, ky, k2 = compute_wavenumbers(
         field.nx, field.ny, field.px, field.py, nf, field.flux_balance_state, lxn, lyn

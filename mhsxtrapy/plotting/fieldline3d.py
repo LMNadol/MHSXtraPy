@@ -1,9 +1,19 @@
 from __future__ import division, print_function
 
+import logging
 from math import floor, sqrt
 
 import numpy as np
 from numba import njit
+
+logger = logging.getLogger(__name__)
+
+__all__ = ["fieldline3d"]
+
+
+### DISCLAIMER: Written by Ben Williams. Taken from his MSAT package.
+### Publication:
+# TODO Add Publication
 
 # rkf45 coefficients
 b2 = 0.25
@@ -572,22 +582,22 @@ def fieldline3d(
         or r0[2] < minmax_box[4]
         or r0[2] > minmax_box[5]
     ):
-        print("Error: Start point not in range")
-        print("Start point is: {} {} {}".format(startpt[0], startpt[1], startpt[2]))
+        logger.error("Start point not in range")
+        logger.error("Start point is: %s %s %s", startpt[0], startpt[1], startpt[2])
 
         if r0[0] < minmax_box[0] or r0[0] > minmax_box[1]:
-            print("{} (x) is the issue".format(startpt[0]))
+            logger.error("%s (x) is the issue", startpt[0])
         if r0[1] < minmax_box[2] or r0[1] > minmax_box[3]:
-            print("{} (y) is the issue".format(startpt[1]))
+            logger.error("%s (y) is the issue", startpt[1])
         if r0[2] < minmax_box[4] or r0[2] > minmax_box[5]:
-            print("{} (z) is the issue".format(startpt[2]))
+            logger.error("%s (z) is the issue", startpt[2])
 
         raise ValueError
     elif not (hmin < np.abs(h) < hmax):
-        print("You need to satisfy hmin ({}) < h ({}) < hmax({})".format(hmin, h, hmax))
+        logger.error("You need to satisfy hmin (%s) < h (%s) < hmax(%s)", hmin, h, hmax)
         raise ValueError
     elif np.all(trilinear3d_grid(r0, bgrid) == np.zeros(3)):
-        print("Start point is a null point")
+        logger.error("Start point is a null point")
         raise ValueError
 
     line = rkf45(
@@ -610,7 +620,7 @@ def fieldline3d(
         periodicity,
     )
 
-    if gridcoord == False:
+    if gridcoord is False:
         for pt in line:
             gtr(pt, x, y, z)
 

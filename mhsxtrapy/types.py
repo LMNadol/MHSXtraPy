@@ -1,5 +1,7 @@
 from enum import Enum
 
+__all__ = ["WhichSolution", "FluxBalanceState"]
+
 
 class WhichSolution(Enum):
     LOW = "low"

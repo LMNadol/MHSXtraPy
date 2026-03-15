@@ -11,6 +11,18 @@ from mhsxtrapy.constants import G_SOLAR, KB, MBAR, MU0, P0, T_CORONA, T_PHOTOSPH
 from mhsxtrapy.field2d import Field2dData, FluxBalanceState
 from mhsxtrapy.solutions import get_solution
 
+__all__ = [
+    "Field3dData",
+    "calculate_magfield",
+    "btemp_linear",
+    "bpressure_linear",
+    "bdensity_linear",
+    "fpressure_linear",
+    "fdensity_linear",
+    "j3d",
+    "lf3d",
+]
+
 
 @dataclass
 class Field3dData:
@@ -231,7 +243,6 @@ class Field3dData:
 
         sol = get_solution(self.solution)
         f = sol.f
-        dfdz = sol.dfdz
 
         if self.flux_balance_state == FluxBalanceState.BALANCED:
             bz_matrix = self.field[:, :, :, 2]
@@ -706,7 +717,6 @@ def j3d(field3d: Field3dData) -> np.ndarray:
 
     sol = get_solution(field3d.solution)
     f = sol.f
-    dfdz = sol.dfdz
 
     j = np.zeros_like(field3d.field)
 

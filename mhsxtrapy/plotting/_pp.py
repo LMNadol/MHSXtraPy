@@ -9,8 +9,11 @@ from mhsxtrapy.constants import G_SOLAR, MU0, L
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.types import FluxBalanceState
 
-plt.rcParams["text.usetex"] = False
 from ._core import _get_coordinates, cmap_density, cmap_pressure
+
+plt.rcParams["text.usetex"] = False
+
+__all__ = ["plot_dpressure_xy", "plot_ddensity_xy"]
 
 
 def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
@@ -23,14 +26,6 @@ def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
     """
 
     B0 = data.field[:, :, 0, 2].max()
-    xmin, xmax, ymin, ymax, zmin, zmax = (
-        data.x[0],
-        data.x[-1],
-        data.y[0],
-        data.y[-1],
-        data.z[0],
-        data.z[-1],
-    )
     # x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
     # y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
 
@@ -90,14 +85,6 @@ def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
     """
 
     B0 = data.field[:, :, 0, 2].max()
-    xmin, xmax, ymin, ymax, zmin, zmax = (
-        data.x[0],
-        data.x[-1],
-        data.y[0],
-        data.y[-1],
-        data.z[0],
-        data.z[-1],
-    )
     # x_big = np.arange(2.0 * data.nx) * 2.0 * xmax / (2.0 * data.nx - 1) - xmax
     # y_big = np.arange(2.0 * data.ny) * 2.0 * ymax / (2.0 * data.ny - 1) - ymax
 

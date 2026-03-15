@@ -7,3 +7,16 @@ from mhsxtrapy.field3d import (
     fpressure_linear,
 )
 from mhsxtrapy.prep import find_corners_SDO, find_corners_SolarOrbiter
+
+__all__ = [
+    "Field2dData",
+    "alpha_HS04",
+    "check_fluxbalance",
+    "bdensity_linear",
+    "bpressure_linear",
+    "calculate_magfield",
+    "fdensity_linear",
+    "fpressure_linear",
+    "find_corners_SDO",
+    "find_corners_SolarOrbiter",
+]

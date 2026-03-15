@@ -26,6 +26,8 @@ cmap_magneto = colors.LinearSegmentedColormap.from_list(
 )
 norm = colors.SymLogNorm(50, vmin=-7.5e2, vmax=7.5e2)
 
+__all__ = ["find_corners_SDO", "find_corners_SolarOrbiter"]
+
 
 def find_corners_SDO(
     path: str,
@@ -48,7 +50,7 @@ def find_corners_SDO(
     """
 
     hmi_image = sunpy.map.Map(path).rotate()  # type: ignore
-    hdr = hmi_image.fits_header
+    # hdr = hmi_image.fits_header
 
     left_corner = SkyCoord(
         Tx=llon * u.arcsec, Ty=llat * u.arcsec, frame=hmi_image.coordinate_frame  # type: ignore
@@ -163,7 +165,6 @@ def find_corners_SolarOrbiter(
     """
 
     bz = getdata(path, ext=False)
-    sub_bz = bz[sty:lsty, stx:lstx]  # type: ignore
 
     x = np.arange(bz.shape[1])  # type: ignore
     y = np.arange(bz.shape[0])  # type: ignore

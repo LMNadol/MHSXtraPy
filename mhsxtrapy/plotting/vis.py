@@ -10,10 +10,12 @@ from matplotlib import rc
 from scipy.interpolate import interp1d
 from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
+from mhsxtrapy.constants import G_SOLAR, MU0, L
 from mhsxtrapy.field2d import Field2dData
 from mhsxtrapy.field3d import Field3dData
 
 from ._3d import plot_magnetogram_3D as plot_3D
+from ._core import cmap_magneto, detect_footpoints
 from ._pp import plot_ddensity_xy as plot_dd
 from ._pp import plot_dpressure_xy as plot_dp
 
@@ -21,9 +23,18 @@ rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=True)
 plt.rcParams["text.usetex"] = False
 
-from mhsxtrapy.constants import G_SOLAR, MU0, L
-
-from ._core import cmap_magneto, detect_footpoints
+__all__ = [
+    "plot_magnetogram_2D",
+    "plot_dpressure_z",
+    "plot_ddensity_z",
+    "plot_magnetogram_3D",
+    "plot_dpressure_xy",
+    "plot_ddensity_xy",
+    "find_center",
+    "show_poles",
+    "detect_footpoints",
+    "show_footpoints",
+]
 
 
 def plot_magnetogram_2D(data: Field2dData) -> None:
@@ -241,7 +252,7 @@ def find_center(data: Field3dData) -> Tuple:
     Find centres of poles on photospheric magentogram.
     """
 
-    xmin, xmax, ymin, ymax, zmin, zmax = (
+    _, xmax, _, ymax, _, _ = (
         data.x[0],
         data.x[-1],
         data.y[0],
@@ -293,7 +304,7 @@ def show_poles(data: Field3dData):
     x_plot = np.outer(data.y, np.ones(data.nx))
     y_plot = np.outer(data.x, np.ones(data.ny)).T
 
-    xmin, xmax, ymin, ymax, zmin, zmax = (
+    _, xmax, _, ymax, _, _ = (
         data.x[0],
         data.x[-1],
         data.y[0],
@@ -307,7 +318,9 @@ def show_poles(data: Field3dData):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     # ax.grid(color="white", linestyle="dotted", linewidth=0.5)
-    ax.contourf(y_plot, x_plot, data.bz, 1000, cmap=cmap)  # , norm=norm) # type: ignore
+    ax.contourf(
+        y_plot, x_plot, data.bz, 1000, cmap=cmap_magneto
+    )  # , norm=norm) # type: ignore
     ax.set_xlabel(r"$x/L$")
     ax.set_ylabel(r"$y/L$")
     plt.tick_params(direction="in", length=2, width=0.5)
@@ -335,23 +348,6 @@ def show_poles(data: Field3dData):
     plt.show()
 
 
-def detect_footpoints(data: Field3dData) -> Tuple:
-    """
-    Detenct footpoints around centres of poles on photospheric magentogram.
-    """
-
-    sinks = data.bz.copy()
-    sources = data.bz.copy()
-
-    maxmask = sources < sources.max() * 0.4
-    sources[maxmask != 0] = 0
-
-    minmask = sinks < sinks.min() * 0.4
-    sinks[minmask == 0] = 0
-
-    return sinks, sources
-
-
 def show_footpoints(data: Field3dData) -> None:
     """
     Show footpoints around centres of poles on photospheric magentogram.
@@ -359,7 +355,7 @@ def show_footpoints(data: Field3dData) -> None:
 
     sinks, sources = detect_footpoints(data)
 
-    xmin, xmax, ymin, ymax, zmin, zmax = (
+    _, xmax, _, ymax, _, _ = (
         data.x[0],
         data.x[-1],
         data.y[0],
