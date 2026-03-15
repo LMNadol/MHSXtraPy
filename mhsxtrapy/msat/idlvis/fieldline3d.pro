@@ -25,11 +25,11 @@ function getdr, r, x, y, z
   ix = floor(r[0])
   iy = floor(r[1])
   iz = floor(r[2])
-  
+
   dx = x[ix + 1] - x[ix]
   dy = y[iy + 1] - y[iy]
   dz = z[iz + 1] - z[iz]
-  
+
   xp = x[ix] + (r[0] - ix)*dx
   yp = y[iy] + (r[1] - iy)*dy
 
@@ -85,7 +85,7 @@ pro edgecheck, r
       endif
     endif
   endif
- 
+
 end
 
 function outedge, r
@@ -121,7 +121,7 @@ function outedge, r
   endif else begin
       outedge = r[0] ge xmax or r[0] le xmin or r[1] ge ymax or r[1] le ymin or r[2] ge zmax or r[2] le zmin
   endelse
-  
+
   return, outedge
 
 end
@@ -133,8 +133,8 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
   compile_opt idl2
 
   ; startpt[3]: start point for field line
-  ; bgrid[nx, ny, nz, 3]: magnetic field 
-  ; x[nx], y[ny], z[nz]: grids of the three grid dimensions on which magnetic field given 
+  ; bgrid[nx, ny, nz, 3]: magnetic field
+  ; x[nx], y[ny], z[nz]: grids of the three grid dimensions on which magnetic field given
 
   ; h: initial step length
   ; hmin: minimum step length
@@ -154,7 +154,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
 
   period_fl3d = bytarr(3)
   if not keyword_set(periodicity) then periodicity = ''
-  
+
   if coordsystem eq 'cartesian' then begin
     period_fl3d[0] = strmatch(periodicity, '*x*')
     period_fl3d[1] = strmatch(periodicity, '*y*')
@@ -178,7 +178,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
         for im = 0, 1 do begin
           index = max(where(boxedge[im, idim] ge dim))
           boxedge1[im, idim] = index + (boxedge[im, idim] - dim[index])/(dim[index+1] - dim[index])
-        endfor    
+        endfor
       endforeach
     endif
     xmin = max([boxedge1[0, 0], 0])
@@ -204,7 +204,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
 
   ;used to determine y_i+1 from y_i if using rkf45 (4th order)
   n1 = 25d/216d & n3 = 1408d/2565d & n4 = 2197d/4104d & n5 = -1d/5d
-    
+
   ;used to determine y_i+1 from y_i if using rkf54 (5th order)
   nn1 = 16d/135d & nn3 = 6656d/12825d & nn4 = 28561d/56430d & nn5 = -9d/50d & nn6 = 2d/55d
 
@@ -253,11 +253,11 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
     count = 1L
     out = 0
     bounce = 0
-    
+
     while count lt maxpoints do begin
 
       r0 = line[-1]
-      
+
       dr = getdr(r0, x, y, z)
       mindist = min(dr)*h
       hvec = mindist/dr
@@ -334,7 +334,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
       if abs(h) gt hmax then h = hmax*signum(h)
 
       thvec = t*hvec
-      
+
       rt = r0
       b = trilinear3d_grid(rt, bgrid)
       k1 = thvec*b/sqrt(total(b^2))
@@ -378,7 +378,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
       edgecheck, rt
       b = trilinear3d_grid(rt, bgrid)
       k5 = thvec*b/sqrt(total(b^2))
-      
+
       rt = r0 + n1*k1 + n3*k3 + n4*k4 + n5*k5
       edgecheck, rt
 
@@ -406,7 +406,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
       endif
 
     end
-    
+
     if bounce eq 1 then line = line[0:-2]
 
     if out eq 1 then begin
@@ -448,7 +448,7 @@ function fieldline3d, startpt, bgrid, x, y, z, h, hmin, hmax, epsilon, $
       line[ipt, 2] = z[iz] + (pt[2] - iz)*(z[iz+1] - z[iz])
     endforeach
   endif
-  
+
   if keyword_set(oneway) then line.reverse
 
   return, transpose(line.toarray())

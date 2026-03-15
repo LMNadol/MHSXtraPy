@@ -32,7 +32,7 @@ module list_mod
       ! "create" a list -- essentially just sets size attribute to zero in case it's not by default
 
       class(list) :: self
-      
+
       self%size = 0
 
     end subroutine
@@ -166,7 +166,7 @@ module list_mod
       nullify(self%first)
       nullify(self%current)
       nullify(self%last)
-      
+
     end subroutine
 
     !********************************************************************************

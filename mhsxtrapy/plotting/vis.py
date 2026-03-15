@@ -1,20 +1,17 @@
 from __future__ import annotations
 
-import math
 import os
 from typing import Literal, Tuple
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import colors, rc
-from scipy.interpolate import griddata, interp1d
+from matplotlib import rc
+from scipy.interpolate import interp1d
 from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
-from sunpy.map.sources import AIAMap
 
 from mhsxtrapy.field2d import Field2dData
-from mhsxtrapy.field3d import Field3dData, FluxBalanceState
-from mhsxtrapy.msat.pyvis.fieldline3d import fieldline3d
+from mhsxtrapy.field3d import Field3dData
 
 from ._3d import plot_magnetogram_3D as plot_3D
 from ._pp import plot_ddensity_xy as plot_dd
@@ -26,19 +23,7 @@ plt.rcParams["text.usetex"] = False
 
 from mhsxtrapy.constants import G_SOLAR, MU0, L
 
-from ._core import (
-    _get_coordinates,
-    _make_boxedges,
-    calculate_tick_count,
-    cmap_aia,
-    cmap_density,
-    cmap_magneto,
-    cmap_pressure,
-    detect_footpoints,
-    norm_aia,
-    norm_hmi,
-    set_axis_labels,
-)
+from ._core import cmap_magneto, detect_footpoints
 
 
 def plot_magnetogram_2D(data: Field2dData) -> None:

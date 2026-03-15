@@ -31,7 +31,7 @@ module trace
         call rk45(r, h)
         hdum = hdum + abs(h)
       enddo
-      
+
       ! if (modulus(r-r0) < 0.1_np*stepdist .and. .not. outedge(r)) then
       !   print*, 'field line not tracin', modulus(r-r0), stepdist, sign
       !   print*, xmin, xmax, ymin, ymax, zmin, zmax
@@ -50,13 +50,13 @@ module trace
       real(np) :: h, hvec(3), mindist, s
       real(np), dimension(3) :: k1, k2, k3, k4, k5, k6
       real(np), dimension(3) :: r, r0, rtest, y, z, dr
-      
+
       r0 = r
-      
+
       !minimum physical distance corresponding to fraction of gridcell (h)
       dr = getdr(r0)
       mindist = minval(dr)*h
-      
+
       !vector containing the grid's h for each direction
       !(so h for each direction is the same physical length, equal to mindist)
       hvec = mindist/dr
@@ -81,7 +81,7 @@ module trace
 
       !calculate optimum step length (s = hoptimum/h)
       s = (tol/modulus(z-y)/2)**0.25_np
-      
+
       if (abs(s*h) < stepmin) s = stepmin/abs(h)
       if (s > 1) s = 1.0_np
 
@@ -125,7 +125,7 @@ module trace
       ix = floor(rcheck(1))
       iy = floor(rcheck(2))
       iz = floor(rcheck(3))
-      
+
       dx = x(ix+1) - x(ix)
       dy = y(iy+1) - y(iy)
       dz = z(iz+1) - z(iz)

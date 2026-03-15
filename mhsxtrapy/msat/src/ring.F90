@@ -48,7 +48,7 @@ contains
         if (nearnull(iline) == 1 .or. nearnull(nxtline) == 1) maxdist0 = maxdist/2.0_np
         if (dist(line2(:,iline),line2(:,nxtline)) > maxdist0) then !if two adjacent points too far away
           ! add point half way between two points
-          add1(:,iline) = line1(:,iline) + 0.5_np*(line2(:,nxtline)-line2(:,iline)) 
+          add1(:,iline) = line1(:,iline) + 0.5_np*(line2(:,nxtline)-line2(:,iline))
           add2(:,iline) = line2(:,iline) + 0.5_np*(line2(:,nxtline)-line2(:,iline))
         endif
       endif
@@ -333,7 +333,7 @@ contains
 #else
                   print*, 'Found a separator to null', inull, 'on ring', nring
 #endif
-                  
+
                   break(rmap(index-1)) = 1 ! disassociate points so that new points don't get added between them as they diverge around the null
                   nseps = nseps + 1
                   ! write the point's information to the separator file

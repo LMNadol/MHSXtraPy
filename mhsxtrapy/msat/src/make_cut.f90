@@ -46,7 +46,7 @@ module make_cut_mod
         + (points(2, ip) - points(2, ip+1:npoints))**2 + (points(3, ip) - points(3, ip+1:npoints))**2)
     enddo
     imindists = minloc(dists)
-    
+
     if (dists(imindists(1), imindists(2)) > disttol*10) then
       ! exit if closest points far away
       exit_status = .true.
@@ -87,7 +87,7 @@ module make_cut_mod
           ! shortest distance from point to all other points and location in array
           imindist = minloc(ptdists, 1)
           mindist = ptdists(imindist)
-          
+
           ! shortest distance from point to all spines
           if (nspines == 0) then
             mindistspine = 1e200_np
@@ -211,7 +211,7 @@ program make_cut
   integer(int64) :: num_nums, leftover_num, read_index, read_num
   integer(int64), parameter :: large_read = 500000000_int64
   real(np), dimension(:, :), allocatable :: lines
-  
+
   integer(int32), dimension(:), allocatable :: associations, breaks
 
   call filenames
@@ -317,7 +317,7 @@ program make_cut
   disttol = ds/10
   print*, ds, hstep
   !********************************************************************************
-    
+
   ! for each spine, check whether we cross desired plane and add point to file
   print*, 'Spines'
   open(unit=80, file=trim(fileout)//'-spines-cut_'//file_pln//'.dat', access='stream', status='replace')
@@ -327,7 +327,7 @@ program make_cut
 
   ipt = 0
   write(80) ipt
-  
+
   do inull = 1, nnulls
     ! read in spines for each direction
     do dir = 1, 2
@@ -386,7 +386,7 @@ program make_cut
         deallocate(line)
       enddo
     enddo
-    
+
     write(80, pos=1) ipt
     close(80)
     close(30)
@@ -419,7 +419,7 @@ program make_cut
     uptoassoc = 0
     uptorings = 0
     do inull = 1, nnulls
-      
+
       read(40) nperring
       nrings = count(nperring > 0) - 1 ! index of nperring starts at 0
 
@@ -442,7 +442,7 @@ program make_cut
 
         ia = uptoassoc + 1
         ip = uptorings + 1
-        
+
         ! if bigger than a certain read size then read in chunks
         ! otherwise read all of it
         if (num_nums > large_read) then
@@ -469,14 +469,14 @@ program make_cut
           read(60, pos=ia) breaks
         endif
       endif
-      
+
       call ring_list%create()
 
       do iring = nrings, 1, -1
 
         uptoring1 = sum(int(nperring(0:iring-2), int64))
         uptoring2 = uptoring1 + nperring(iring-1)
-        
+
         ! if have to use the slow method start reading in ring by ring
         ! otherwise use the arrays read in above using fast method
         if (too_much_memory) then
@@ -484,7 +484,7 @@ program make_cut
           ia = uptoassoc + uptoring2*4_int64 + 1
           read(55, pos=ia) association
           read(60, pos=ia) break
-          
+
           if (iring == nrings) then
             allocate(line(3, nperring(iring)))
             ip = uptorings + uptoring2*24_int64 + 1
@@ -551,7 +551,7 @@ program make_cut
         endif
 
       enddo
-      
+
       deallocate(points)
       if (mod(inull, iprint) == 0) print*, 'Done', inull, 'of', nnulls
     enddo
@@ -563,7 +563,7 @@ program make_cut
     deallocate(nperring)
 
     print*, 'Finished null rings'
-  
+
   endif
 
   !********************************************************************************
@@ -582,12 +582,12 @@ program make_cut
 
     nlines = 0
     write(80) nlines
-    
+
     read(40) nrings
     read(40) nskip_file
     allocate(nperring(0:ceiling(real(nrings)/nskip_file-1)))
     read(40) nrings, nrings, nrings, ncomp
-    
+
     uptoassoc = 0
     uptorings = 0
 
@@ -631,7 +631,7 @@ program make_cut
 
         ! ia = uptoassoc + uptoring2*4_int64 + 1
         ! ip = uptorings + uptoring2*24_int64 + 1
-      
+
         ! allocate(association(nperring(iring)), line(3, nperring(iring)))
         ! read(55, pos=ia) association
         ! read(50, pos=ip) line
@@ -699,7 +699,7 @@ program make_cut
     open(unit=80, file=trim(fileout)//'-hcs-separators-cut_'//file_pln//'.dat', access='stream', status='replace')
     open(unit=20, file=trim(fileout)//'-hcs-connectivity.dat', access='stream', status='old')
     open(unit=30, file=trim(fileout)//'-hcs-separators.dat', access='stream', status='old')
-    
+
     ipt = 0
     write(80) ipt
     read(20) nseps
@@ -721,7 +721,7 @@ program make_cut
       read(20) flag, flag ! don't care about these - just reposition file marker
       deallocate(line)
     enddo
-    
+
     write(80, pos=1) ipt
     close(80)
     close(30)

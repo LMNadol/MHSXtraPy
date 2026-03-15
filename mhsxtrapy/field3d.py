@@ -3,26 +3,13 @@ from __future__ import annotations
 import pickle
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Optional
 
 import numpy as np
 
 from mhsxtrapy.b3d import WhichSolution, b3d
-from mhsxtrapy.constants import (
-    G_SOLAR,
-    KB,
-    MBAR,
-    MU0,
-    P0,
-    RHO0,
-    T_CORONA,
-    T_PHOTOSPHERE,
-    L,
-)
+from mhsxtrapy.constants import G_SOLAR, KB, MBAR, MU0, P0, T_CORONA, T_PHOTOSPHERE, L
 from mhsxtrapy.field2d import Field2dData, FluxBalanceState
 from mhsxtrapy.solutions import get_solution
-from mhsxtrapy.solutions.low import dfdz_low, f_low
-from mhsxtrapy.solutions.neuwie import dfdz_nw, f_nw
 
 
 @dataclass

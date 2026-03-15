@@ -1,7 +1,8 @@
-import numpy as np
 import glob
-import sys
 import os.path
+import sys
+
+import numpy as np
 
 # if system has enough memory - could read in all at once and then split
 

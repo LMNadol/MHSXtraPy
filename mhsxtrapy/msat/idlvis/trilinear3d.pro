@@ -42,7 +42,7 @@ function trilinear3d, xp, yp, zp, grid, xx, yy, zz
     b101 = grid[ix+1, iy, iz+1, k]
     b011 = grid[ix, iy+1, iz+1, k]
     b111 = grid[ix+1, iy+1, iz+1, k]
-    
+
     a = b000
     b = b100 - b000
     c = b010 - b000

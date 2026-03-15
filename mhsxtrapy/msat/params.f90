@@ -31,7 +31,7 @@ module params
 
   ! Sign Finder Parameters
   ! ----------------------
-  ! radius factor (in grid coordinates) of sphere on which to 
+  ! radius factor (in grid coordinates) of sphere on which to
   ! place start points (rsphere = rspherefact*10**-sig_figs)
   real(np), parameter :: rspherefact = 100.0_np
   ! number of start points in phi direction

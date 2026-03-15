@@ -280,7 +280,7 @@ program hcs
       endif
 
       open(unit=90, file=tempfile, status='replace', access='stream')
-      
+
       ! get number of start points
       line1 = pordered(:, npoints(ihcs)+1:npoints(ihcs+1))
       line2 = line1

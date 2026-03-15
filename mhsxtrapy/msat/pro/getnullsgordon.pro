@@ -20,12 +20,12 @@ function getnullsgordon, gordon=gordon, me=me
 
   close,null
   free_lun,null
-  
+
   ;nullfile = '../../../crgordon/analysis/SPHR3/output/'
   nullfile = "output/"
   if keyword_set(gordon) then nullfile = nullfile + 'nulls.dat'
   if keyword_set(me) then nullfile = nullfile + 'nullsben.dat'
-  
+
   openr,null,nullfile,/f77_unformatted,/get_lun;nullfile
   nnulls = 0l
   readu,null,nnulls
@@ -51,6 +51,6 @@ function getnullsgordon, gordon=gordon, me=me
     nulls[i].fan = fan[*,i]
     nulls[i].type = signs[i]
   endfor
-  
+
   return, nulls
 end

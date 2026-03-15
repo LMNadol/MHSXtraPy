@@ -1,30 +1,16 @@
 from __future__ import annotations
 
 import os
-from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import colormaps, colors, rc
 
 from mhsxtrapy.constants import G_SOLAR, MU0, L
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.types import FluxBalanceState
 
 plt.rcParams["text.usetex"] = False
-from ._core import (
-    _get_coordinates,
-    _make_boxedges,
-    calculate_tick_count,
-    cmap_aia,
-    cmap_density,
-    cmap_magneto,
-    cmap_pressure,
-    detect_footpoints,
-    norm_aia,
-    norm_hmi,
-    set_axis_labels,
-)
+from ._core import _get_coordinates, cmap_density, cmap_pressure
 
 
 def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:

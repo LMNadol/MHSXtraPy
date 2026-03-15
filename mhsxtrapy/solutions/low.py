@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from numba import njit
-from scipy.special import hyp2f1, jv
+from scipy.special import jv
 
 from .base import Solution
 

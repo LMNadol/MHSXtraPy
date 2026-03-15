@@ -63,12 +63,12 @@
 
     \begin{enumerate}
       \item First you need to set-up data and output symbolic links using the command
-      
+
       \texttt{make setup data=/path/to/data/dir output=/path/to/output/dir}
-      
+
       where
       \begin{itemize}
-        \item \texttt{/path/to/data/dir} is the path to the directory where your 3D cube of magnetic data is stored. To see how to write your magnetic data in the correct format see Section~\ref{sec:prep_data}. 
+        \item \texttt{/path/to/data/dir} is the path to the directory where your 3D cube of magnetic data is stored. To see how to write your magnetic data in the correct format see Section~\ref{sec:prep_data}.
 
         \item \texttt{/path/to/output/dir} is the path to the directory where the output files from the skeleton analysis of the data will be stored. This can be the same as your data directory.
       \end{itemize}
@@ -198,7 +198,7 @@
       \texttt{./writedata}.
 
       This will save a magnetic field (by default) as \texttt{data/magfield.dat}. To change the output file name type \texttt{writedata -o newfilename.dat} and the data file will be saved as \texttt{data/newfilename.dat}
-    
+
     \subsection{Creating a Data Set from an Analytical Expression in Python}
       \label{sec:pythonanal}
 
@@ -258,7 +258,7 @@
     \texttt{./nf -i data/magfield.dat}
 
     \texttt{./sf -i data/magfield.dat}
-    
+
     \texttt{./ssf*** -i data/magfield.dat} (replacing \texttt{***} for the appropriate coordinate system, see section \ref{sec:coord})
 
     They must be run in the above order or they will not work as the next code depends on output from the previous code. From now on, the manual will assume the magnetic field data file is called \texttt{magfield.dat}.
@@ -271,12 +271,12 @@
     The three codes work in grid coordinates (a coordinate given between 1 and \( n_x \) in the \( x \) direction for example). The output from each is all in real coordinates (a coordinate in the original coordinate system) unless grid coordinates are also outputted.
 
     All options for these are in \texttt{params.f90} and are described here with their defaults.
-    
+
     \subsection{Parameters}
       \label{sec:params}
 
       None of the parameters below should need to be changed, but they are discussed such that in the unlikely event that they do need to be changed it is clear what they are used for.
-      
+
       \subsubsection{Global}
         \begin{description}
           \item [\texttt{nproc = 4}:] the number of processors used in OpenMP. Set to zero to use the environment variable OMP\_NUM\_THREADS. If OMP\_NUM\_THREADS is not set, OpenMP will attempt to use all available cores. This parameter will be ignored if OpenMP is turned off.
@@ -300,14 +300,14 @@
           \item [\texttt{nstart = 500}:] the number of field line start points forming the initial ring about the null. This number is also the minimum number of points \texttt{ssf} will try to maintain during the separatrix surface analysis.
           \item [\texttt{pointsmax = 100000}:] specifies the maximum number points (field lines) on a ring. The code will move onto the next null if this number of points on a ring is reached.
         \end{description}
-        
+
         These parameters relate to the rings used to determine the separatrix surface location
-        
+
         \begin{description}
           \item [\texttt{stepsize = 0.2}:] the distance in grid coordinates between each of the rings. This is equivalent to saying the magnetic field line through each point on a ring is traced a distance approximately equal to \texttt{stepsize = 0.2} in grid coordinates before the next ring is formed.
           \item [\texttt{ringsmax = 10000}:] the maximum number of rings (excluding the first) that \texttt{ssf} will use to analyse each null's separatrix surface. If this number of rings is reached then the code will move onto the next null. For large boxes, this may need to be increased. The code will be able trace fieldlines a maximum of approximately \texttt{stepsize} \( \times \) \texttt{ringsmax} grid points away from the nulls.
         \end{description}
-        
+
         These parameters relate to the tracing of the field lines via the Runge-Kutta-Fehlberg integration scheme.
         \begin{description}
           \item [\texttt{tol}, \texttt{stepmin}:] These are RKF45 parameters that relate, respectively, to the tolerance to which a field line is traced and the minimum step distance used for iteration of the scheme.
@@ -335,7 +335,7 @@
           \item [3:] The code early on tries to make a guess on the sign of the null based on which of the points converge first. This will be flagged if the guess and the final sign do not agree -- perhaps worth checking the null.
         \end{description}
         Errors with individual nulls can be checked using \texttt{nullstruct.py}. See later for more details.
-      
+
       \subsubsection{Separatrix Surface Finder}
         The Separatrix Surface Finder will stop under the following circumstances:
         \begin{enumerate}
@@ -350,7 +350,7 @@
 
   \section{Cut Maker}
 
-    The cut maker creates slices through the magnetic skeleton features to aid visualisation. Any linearly defined plane can be used of the form 
+    The cut maker creates slices through the magnetic skeleton features to aid visualisation. Any linearly defined plane can be used of the form
       \[ a x_1 + b x_2 + c x_3 = d \]
     where \( x_1, x_2, x_3 \) are the three coordinates of the coordinate system.
     For example, in spherical coordinates, this represents a plane of the form:
@@ -453,7 +453,7 @@
       It is possible to add more magnetic skeleton features after the initial draw. There is an individual function for drawing each part of the magnetic skeleton which can be called separately. This is especially useful for drawing different sets of fieldlines individually. However the initial \texttt{make} must have been called. This will at least read in the required initial data. If you do not want anything to plot initally, set \texttt{addlist} to be an empty list.
 
       The following command will plot fieldlines from the \texttt{(n, 3)} array of points given in \texttt{startpts}
-      
+
       \texttt{m3d.add\_fieldlines(startpts, col=(0,0,0))}.
 
       For more documentation, such as how to save the plots drawn, see the Mayavi online documentation at \texttt{http://docs.enthought.com/mayavi/mayavi/mlab.html}. Once the plotting window is open, standard Mayavi commands can be used. The Mayavi module is imported inder the name \texttt{ml} in the \texttt{model3d} module or it can be imported into the main namespace.
@@ -463,11 +463,11 @@
       Here are listed some examples of the indexing of the output from the data reading routines as the lists of lists etc. may become confusing.
 
       If the separators are read in using
-      
+
       \texttt{seps, cons = rd.separators(`data/magfield.dat')}
-      
+
       then the following indexing occurs:
-      
+
       \texttt{seps} is a list containing an element for each null point. \texttt{seps[inull]} is then also a list containing an element for each separator found. Then finally
 
       \begin{center}

@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import math
 import os
-from typing import Literal, Tuple
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import colormaps, colors, rc
+from matplotlib import rc
 
-from mhsxtrapy.constants import G_SOLAR, MU0, L
-from mhsxtrapy.field2d import Field2dData
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.msat.pyvis.fieldline3d import fieldline3d
 from mhsxtrapy.types import FluxBalanceState
@@ -17,14 +15,10 @@ from mhsxtrapy.types import FluxBalanceState
 from ._core import (
     _get_coordinates,
     _make_boxedges,
-    calculate_tick_count,
     cmap_aia,
-    cmap_density,
     cmap_magneto,
-    cmap_pressure,
     detect_footpoints,
     norm_aia,
-    norm_hmi,
     set_axis_labels,
 )
 

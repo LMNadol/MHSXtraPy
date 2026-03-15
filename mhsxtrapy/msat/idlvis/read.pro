@@ -102,7 +102,7 @@ function read_nulls, filename, simple=simple
   endif
 
   return, nulls
-  
+
 end
 
 function read_separators, filename, conlist=conlist, null_list=null_list, hcs=hcs
@@ -153,7 +153,7 @@ function read_separators, filename, conlist=conlist, null_list=null_list, hcs=hc
       conlist.add, list()
       seplist.add, list()
     endelse
-    
+
   endforeach
 
   close, sep, con
@@ -168,7 +168,7 @@ function read_spines, filename, null_list=null_list
   common shared_var_read
 
   if outdir eq !null then outdir = 'output'
-  
+
   nulldata = read_nulls(filename, /simple)
 
   if not keyword_set(null_list) then null_list = nulldata.number
@@ -195,7 +195,7 @@ function read_spines, filename, null_list=null_list
 
   close, spi
   free_lun, spi
-  
+
   return, spinelist
 
 end
@@ -309,7 +309,7 @@ function read_rings, filename, nskip=nskip, breaks=breaklist, assocs=assoclist, 
     close, ass
     free_lun, ass
   endif
-  
+
   return, ringlist
 
 end
@@ -346,11 +346,11 @@ function read_cut_sepsurf, filename, normal, d
   common shared_var_read
 
   if outdir eq !null then outdir = 'output'
-  
+
   filename_plane = get_cut_filename_plane(normal, d)
   null_nums = list()
   sepsurfs = list()
-  
+
   nlines = 0L
   inull = 0L
   length = 0L
@@ -415,7 +415,7 @@ end
 function read_cut_spines, filename, normal, d
   compile_opt idl2
   common shared_var_read
-  
+
   if outdir eq !null then outdir = 'output'
 
   filename_plane = get_cut_filename_plane(normal, d)
@@ -438,7 +438,7 @@ function read_cut_spines, filename, normal, d
   free_lun, spinefile
 
   return, list(spine_pts, null_nums)
-  
+
 end
 
 function read_cut_hcs, filename, normal, d
@@ -453,7 +453,7 @@ function read_cut_hcs, filename, normal, d
   nlines = 0L
   length = 0L
   temp = 0L
-  
+
   openr, hcsfile, outdir+'/'+prefix(filename)+'-hcs-cut_'+filename_plane+'.dat', /get_lun
   readu, hcsfile, nlines
   for i = 1, nlines do begin
@@ -472,7 +472,7 @@ end
 
 pro set_output_dir, loc
   common shared_var_read
-  
+
   if loc.endswith('/') then loc = loc.remove(-1)
   outdir = loc
   print, 'Changed output data directory to be "./' + outdir + '"'

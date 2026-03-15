@@ -3,7 +3,7 @@ function convert, gridcoord, x, y, z, check=check
   r = gridcoord[0]
   t = gridcoord[1]
   p = gridcoord[2]
-  
+
   r = x[floor(r)] + (r-floor(r))(x[ceil(r)]-x[floor(r)])
   t = y[floor(t)] + (t-floor(t))(y[ceil(t)]-y[floor(t)])
   p = z[floor(p)] + (p-floor(p))(z[ceil(p)]-z[floor(p)])
@@ -15,7 +15,7 @@ end
 pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=file
 
   !except = 0
-  
+
   if not keyword_set(file) then file = 'data/magfield.dat'; else file = 'data/' + file
   openr,10,file
   nx = 0l
@@ -28,7 +28,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
   z = dblarr(nz)
   readu,10,bgrid,x,y,z
   close,10
-  
+
   sizebg = size(bgrid)
   xgc = indgen(sizebg[1])
   ygc = indgen(sizebg[2])
@@ -41,7 +41,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
   xyznpos = npos
   plt = plot3d([xyznpos[0]],[xyznpos[1]],[xyznpos[2]],'red',lines=' ',sym='x', sym_thick=3, sym_size=1.5, dim=[1200,900])
   plt.scale,1.5,1.5,1.5
-  
+
   if not keyword_set(rsphere) then rsphere = 1d-3 ; rsphere from sf_converge/params.f90
 
   if keyword_set(converge) then begin
@@ -63,7 +63,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
         for i = 0, 2 do r[*,i] = r[*,i] + npos[i]
         ;for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
         p = plot3d(r[*,0],r[*,1],r[*,2],lines=' ',sym='x', aspect_ratio=1,/overplot)
-        
+
         if not eof(10) then begin
           readu,10,maxvec
           max1 = maxvec
@@ -97,7 +97,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
         for i = 0, 2 do r[*,i] = r[*,i] + npos[i]
         ;for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
         p = plot3d(r[*,0],r[*,1],r[*,2],'g',lines=' ',sym='x', aspect_ratio=1,/overplot)
-        
+
         if not eof(10) then begin
           readu,10,minvec
           min1 = minvec
@@ -113,7 +113,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
         for i = 0,2 do r[*,i] = r[*,i] + npos[i]
         ;for i = 0, n_elements(r)/3-1 do r[i,*] = convert(r[i,*],x,y,z)
         p = plot3d(r[*,0],r[*,1],r[*,2],'r',lines=' ',sym='x',/overplot,/aspect_ratio)
-        
+
         if not eof(10) then begin
           readu, 10, spine
           spine = spine*rsphere
@@ -125,10 +125,10 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
       close,10
     endforeach
   endif
-  
+
   boxedge = dblarr(2,3)
   for i = 0, 2 do boxedge[*,i] = [npos[i] - rsphere, npos[i] + rsphere]
-  
+
   startpts = []
   if keyword_set(fan) then begin
     rad = 0.6*rsphere
@@ -139,7 +139,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
     endfor
     startpts = startpts*rad
   endif
-  
+
   if keyword_set(ball) then begin
     rad = 5*rsphere/2d1
     nt = 6
@@ -158,7 +158,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
 
   if keyword_set(ball) or keyword_set(fan) then begin
     for i = 0, 2 do startpts[i,*] = startpts[i,*] + npos[i]
-    
+
     h0 = rsphere*1d-3
     for j = 0, n_elements(startpts)/3-1 do begin
       h = h0
@@ -166,7 +166,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
       line = transpose(line)
       ;for i = 0, n_elements(line)/3-1 do line[i,*] = convert(line[i,*],x,y,z)
       plt = plot3d(line[*,0],line[*,1],line[*,2],'red',/overplot,/aspect_ratio,/perspective)
-      
+
       h = h0
       line = fieldline3d(startpts[*,j], bgrid, xgc,ygc,zgc, -h, 0.1d*h, 10d*h, 0.01d*h, boxedge=boxedge, /oneway, /gridcoord)
       line = transpose(line)
@@ -174,7 +174,7 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
       plt = plot3d(line[*,0],line[*,1],line[*,2],'orange',/overplot,/aspect_ratio)
     endfor
   endif
-  
+
   if 0 eq 1 then begin
     dist = 1d-1
     angle = acos(1d - 0.5*dist^2)
@@ -190,11 +190,11 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
     ;for i = 0, n_elements(pts)/3-1 do pts[i,*] = convert(pts[i,*],x,y,z)
     plt = plot3d(pts[*,0],pts[*,1],pts[*,2],linest=' ',sym='x',/overplot,sym_thick=2, sym_size=2,/aspect_ratio)
   endif
-  
+
   plt.xtitle = "x"
   plt.ytitle = "y"
   plt.ztitle = "z"
-  
+
   print, "----------------------------------------"
   print, "Key:
   print, "----"
@@ -207,5 +207,5 @@ pro plotstruct, n, converge=converge, fan=fan, ball=ball, rsphere=rsphere, file=
   print, "Lines traced forwards - Red lines"
   print, "Lines traced backwards - Orange Lines"
   print, "----------------------------------------"
-    
+
 end

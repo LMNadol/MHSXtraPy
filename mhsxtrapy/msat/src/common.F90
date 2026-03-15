@@ -13,7 +13,7 @@ module common
   real(np), allocatable, dimension(:,:) :: rnulls, rnullsalt, rnullsreal
   real(np), allocatable, dimension(:,:) :: spines, fans
   integer(int32), allocatable, dimension(:) :: signs
-  
+
   real(np), parameter :: pi = acos(-1.0_np)
   real(np), parameter :: dtor = pi/180.0_np
   character(:), allocatable :: filein, fileout
@@ -50,11 +50,11 @@ module common
         enddo
       endif
       if (ic == 0) stop 'No input file provided'
-      
+
       fileout = filein(1:index(filein(1:index(filein, '/', .true.)-1), '/', .true.)) &
         //trim(outname)//'/' &
         //trim(filein(index(filein, '/', .true.)+1:index(filein, '.dat', .true.)-1))
-      
+
     end
 
     subroutine print_params
@@ -85,7 +85,7 @@ module common
       print*, 'samemax =', samemax
       print*, 'stepsize =', stepsize
       print*, 'tol =', tol
-      print*, 'stepmin =', stepmin 
+      print*, 'stepmin =', stepmin
       print*, 'restart =', restart
       print*, 'nullrestart =', nullrestart
       print*, 'nskip =', nskip
@@ -248,7 +248,7 @@ module common
 
       nx = size(x, 1)
       ny = size(x, 2)
-      
+
       if (present(pos)) then
         position = pos
       else
@@ -269,11 +269,11 @@ module common
 
     subroutine add_element(x, number, pos)
       ! adds an row with number to a nx array at row number pos (or end)
-      
+
       integer(int32), allocatable, dimension(:) :: x, dummy
       integer(int32), optional :: pos
       integer(int32) :: nx, position, number, flag
-      
+
       flag = number
 
       nx = size(x, 1)
@@ -311,7 +311,7 @@ module common
 
       x(:, 1:pos-1) = dummy(:, 1:pos-1)
       x(:, pos:ny-1) = dummy(:, pos+1:ny)
-      
+
     end
 
     !********************************************************************************
@@ -330,14 +330,14 @@ module common
 
       x(1:pos-1) = dummy(1:pos-1)
       x(pos:nx-1) = dummy(pos+1:nx)
-      
+
     end
 
     !********************************************************************************
 
     function modulus(a)
       ! calculates the magnitude a vector a
-      
+
       real(np), dimension(3) :: a
       real(np) :: modulus
 
@@ -349,7 +349,7 @@ module common
 
     function dist(a, b)
       ! calculates the distance between two points in grid units
-      
+
       real(np) :: dist
       real(np), dimension(3) :: a, b
 
@@ -392,14 +392,14 @@ module common
         if (.not. periodic_theta) outedge = outedge .or. r(2) >= ymax .or. r(2) <= ymin
         if (.not. periodic_phi) outedge = outedge .or. r(3) >= zmax .or. r(3) <= zmin
       endif
-#endif      
-      
-    end function  
+#endif
+
+    end function
 
     !********************************************************************************
 
     subroutine edgecheck(r)
-      ! determines if the point r is outwith the computational box across a 
+      ! determines if the point r is outwith the computational box across a
       ! periodic boundary and moves it if necessary
 
       real(np) :: r(3)
@@ -462,7 +462,7 @@ module common
         if (r(3) >= zmax) r(3) = r(3) - (zmax - zmin)
       endif
 #endif
-          
+
     end subroutine
 
     !********************************************************************************
@@ -507,11 +507,11 @@ module common
       roty(1,1) = cos(-theta)
       roty(1,2) = 0
       roty(1,3) = -sin(-theta)
-      
+
       roty(2,1) = 0
       roty(2,2) = 1
       roty(2,3) = 0
-      
+
       roty(3,1) = sin(-theta)
       roty(3,2) = 0
       roty(3,3) = cos(-theta)

@@ -1,12 +1,12 @@
 import math
 import sys
 
-import numpy as np
 import mayavi.mlab as ml
+import numpy as np
 import vtk
 
-from . import read as rd
 from . import fieldline3d as fl
+from . import read as rd
 
 try:
     __IPYTHON__

@@ -16,7 +16,7 @@ program nullfinder
   real(np) :: ds
   real(np), dimension(0:10, 0:10, 0:10, 3) :: subcube
   integer(int32) :: mincube(3)
-  
+
   real(np) :: rtri(3), rnull(3)
 
   integer(int32) :: ix, iy, iz, isig, ixsub, iysub, izsub
@@ -71,7 +71,7 @@ program nullfinder
   do iz = 1, nz-1
     do iy = 1, ny-1
       do ix = 1, nx-1
-        
+
         cube = bgrid(ix:ix+1, iy:iy+1, iz:iz+1, :)
         ! check if bx changes sign
         if (allsame(cube(:, :, :, 1))) cycle
@@ -103,13 +103,13 @@ program nullfinder
       do ix = 1, nx-1
 
         if (candidates(ix, iy, iz)) then
-          
+
           ! adding 1e-8 can help find null points...
           rnull = [ix, iy, iz]! + 1e-8_np
 
           ierror = 0
           sigloop: do isig = 1, sig_figs
-            
+
             ds = 10.0_np**(-isig)
             do izsub = 0, 10
               do iysub = 0, 10
@@ -143,7 +143,7 @@ program nullfinder
                 enddo
               enddo
             enddo outer
-            
+
             if (itest == 0) then
 #if debug
               if (isig > 1) then
@@ -156,7 +156,7 @@ program nullfinder
 #endif
               exit sigloop
             endif
-            
+
           enddo sigloop
 
           if (itest == 1) then
@@ -176,7 +176,7 @@ program nullfinder
             rnull = rnull + (mincube - 1)*ds
 
             bound_dist = rspherefact*10.0_np**(-sig_figs)
-            
+
             if (boundary_nulls) then
               call nullpts%append(rnull)
             else
@@ -216,7 +216,7 @@ program nullfinder
     enddo
     print*, 'Found', nullpts%size - nnulls, 'nulls at vertices'
   endif
-  
+
   nnulls = nullpts%size
 
   rnulls = nullpts%to_array()
@@ -226,7 +226,7 @@ program nullfinder
   print*, ''
 
   print*, 'Now checking for duplicate nulls:'
-    
+
   if (nnulls > 1) then
     exitcondition = .false.
 

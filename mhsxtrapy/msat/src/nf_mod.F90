@@ -1,6 +1,6 @@
 ! module for nullfinder
 module nf_mod
-  
+
   use params
 
   implicit none
@@ -23,7 +23,7 @@ module nf_mod
     integer(int32), dimension(6,6) :: test
     integer(int32), dimension(6) :: test2
     integer(int32), dimension(3) :: test3
-    
+
     ! test is an array where the first index refers to the face number (1:6) and the second index is follows:
     ! 1: x-y intersection (1/0)
     ! 2: sign of z at this intersection (-1/1 /100 if null on face)
@@ -173,7 +173,7 @@ module nf_mod
   !********************************************************************************
 
   subroutine face_solve(facex,facey,facez,cross,sign)
-    ! tests if the zeroes on facex and facey cross, and if so, 
+    ! tests if the zeroes on facex and facey cross, and if so,
     ! what the sign of facez is at the crossing point.
     ! Uses the Method described in Haynes et al. 2007
 
@@ -328,7 +328,7 @@ module nf_mod
           sign = sign + 100
         endif
       endif
-    
+
       if (check(x(2,2), y(2,2))) then
         cross = cross + 1
 
@@ -416,7 +416,7 @@ module nf_mod
     ! interpolate the value of a function at (x, y) from the 4 corner values
 
     implicit none
-    
+
     real(np) :: x, y, square(2, 2)
     real(np) :: y1, y2, line(2)
     real(np) :: bilinear_cell

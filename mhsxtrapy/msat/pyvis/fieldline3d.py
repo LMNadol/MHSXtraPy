@@ -1,7 +1,9 @@
-from __future__ import print_function, division
+from __future__ import division, print_function
+
+from math import floor, sqrt
+
 import numpy as np
-from math import sqrt, floor
-from numba import njit, float64 as f64, void, boolean
+from numba import njit
 
 # rkf45 coefficients
 b2 = 0.25

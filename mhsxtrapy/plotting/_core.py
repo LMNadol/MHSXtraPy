@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import os
 from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import colormaps, colors, rc
+from matplotlib import colormaps, colors
 
-from mhsxtrapy.constants import G_SOLAR, MU0, L
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.types import FluxBalanceState
 

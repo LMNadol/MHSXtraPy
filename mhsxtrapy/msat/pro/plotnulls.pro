@@ -30,7 +30,7 @@ nulls = replicate({nulldata},nnulls)
 
 for i = 0, nnulls-1 do begin
   nulls[i].pos = realpos[*,i]
-  nulls[i].gridpos = pos[*,i] 
+  nulls[i].gridpos = pos[*,i]
   nulls[i].spine = spine[*,i]
   nulls[i].fan = fan[*,i]
   nulls[i].type = signs[i]

@@ -33,7 +33,7 @@ pro model_add_sepsurf, nskip=nskip, draw=draw, nlines=nlines, nring=nring
 
   if draw eq 'rings' then begin
     print, 'Adding separatrix surface rings'
-    
+
     rings = read_rings(filename, breaks=breaks, nskip=nskip, null_list=nulllist)
 
     foreach inull, nulllist-1 do begin
@@ -56,14 +56,14 @@ pro model_add_sepsurf, nskip=nskip, draw=draw, nlines=nlines, nring=nring
           oModel.add, obj_new("IDLgrPolyline", ring[0, brks[ib]+1:brks[ib+1]], ring[1, brks[ib]+1:brks[ib+1]], ring[2, brks[ib]+1:brks[ib+1]], color=colour)
         endfor
       endfor
-      
+
     endforeach
   endif else if draw eq 'fieldlines' then begin
-    
+
     if not keyword_set(nlines) then nlines = 50
 
     rings = read_rings(filename, nskip=nskip, null_list=nulllist)
-    
+
     foreach inull, nulllist-1 do begin
 
       if nulldata[inull].sign gt 0 then colour = [255, 128, 128] else begin
@@ -83,7 +83,7 @@ pro model_add_sepsurf, nskip=nskip, draw=draw, nlines=nlines, nring=nring
       nskip = n_elements(ring[0, *])/nlines
 
       for i = 0, nlines-1 do begin
-        
+
         startpt = ring[*, i*nskip]
         h = 1d-2
         hmin = 1d-3
@@ -140,7 +140,7 @@ pro model_add_hcs, nskip=nskip, nlines=nlines, draw=draw
           oModel.add, obj_new("IDLgrPolyline", ring[0, brks[ib]+1:brks[ib+1]], ring[1, brks[ib]+1:brks[ib+1]], ring[2, brks[ib]+1:brks[ib+1]], color=colour)
         endfor
       endfor
-      
+
     endfor
 
   endif else if draw eq 'fieldlines' then begin
@@ -171,7 +171,7 @@ pro model_add_hcs, nskip=nskip, nlines=nlines, draw=draw
           endif else begin
             line = line[*, imax:-1]
           endelse
-          
+
           line = sphr2cart(line)
 
           oModel.add, obj_new("IDLgrPolyline", line[0, *], line[1, *], line[2, *], color=colour)
@@ -181,7 +181,7 @@ pro model_add_hcs, nskip=nskip, nlines=nlines, draw=draw
       endfor
 
     endfor
-  
+
   endif else print, "Set draw to be either 'rings' or 'fieldlines'"
 
   for inull = 0, n_elements(rings)-1, 2 do begin
@@ -203,7 +203,7 @@ pro model_add_spines
   foreach inull, nulllist-1 do begin
     if nulldata[inull].sign gt 0 then col = [250, 0, 0] else col = [0, 0, 250]
     for dir = 0, 1 do begin
-      
+
       spine = spines[inull, dir, *, *]
       if csystem_model3d eq 'spherical' then spine = sphr2cart(spine)
 
@@ -235,7 +235,7 @@ pro model_add_separators, hcs=hcs
   if keyword_set(hcs) then to_do = [0] else to_do = nulllist-1
 
   foreach inull, to_do do begin
-    
+
     for isep = 0, n_elements(seps[inull])-1 do begin
       sep = seps[inull, isep, *, *]
       if csystem_model3d eq 'spherical' then sep = sphr2cart(sep)
@@ -264,7 +264,7 @@ pro model_add_nulls, size=size
   if not keyword_set(size) then size = 1
   r = max([boxsize, ds])*size
   radius = ds
-  
+
   foreach inull, nulllist-1 do begin
     mesh_obj, 4, vert, poly, replicate(radius,21,21)
     pos = nulldata[inull].pos
@@ -275,7 +275,7 @@ pro model_add_nulls, size=size
     endelse
     oModel.add, obj_new("IDLgrPolygon", data=vert, polygons=poly, color=colour, /shading)
   endforeach
-  
+
 end
 
 pro model_add_fieldlines, startpts, colour=colour
@@ -285,7 +285,7 @@ pro model_add_fieldlines, startpts, colour=colour
   if not keyword_set(colour) then colour = [0, 0, 0]
 
   for i = 0, n_elements(startpts)/3 - 1  do begin
-        
+
     startpt = startpts[*, i]
     h = 1d-2
     hmin = 1d-3
@@ -314,17 +314,17 @@ end
 pro model_add_box
   common shared_var_model3d
   compile_opt idl2
-  
+
   print, "Adding box"
   box = dblarr(3,2)
-  box[*,0] = [min(xx), min(yy), min(zz)] 
+  box[*,0] = [min(xx), min(yy), min(zz)]
   box[*,1] = [max(xx), max(yy), max(zz)]
   line = double(transpose([[0, 0, 0], [1, 0, 0], [1, 0, 1], $
       [1, 0, 0], [1, 1, 0], [1, 1, 1], $
       [1, 1, 0], [0, 1, 0], [0, 1, 1], $
       [0, 1, 0], [0, 0, 0], [0, 0, 1], $
       [1, 0, 1], [1, 1, 1], [0, 1, 1], [0, 0, 1]]))
-  
+
   line[*, 0] = line[*, 0]*(box[0, 1] - box[0, 0]) + box[0, 0]
   line[*, 1] = line[*, 1]*(box[1, 1] - box[1, 0]) + box[1, 0]
   line[*, 2] = line[*, 2]*(box[2, 1] - box[2, 0]) + box[2, 0]
@@ -333,7 +333,7 @@ pro model_add_box
   oModel.add, obj_new('idlgrtext', 'x', locations=[box[0, 0]+dist, box[1, 0], box[2, 0]], /onglass)
   oModel.add, obj_new('idlgrtext', 'y', locations=[box[0, 0], box[1, 0]+dist, box[2, 0]], /onglass)
   oModel.add, obj_new('idlgrtext', 'z', locations=[box[0, 0], box[1, 0], box[2, 0]+dist], /onglass)
-  
+
   oModel.add, obj_new('IDLgrPolyline', line[*, 0], line[*, 1], line[*, 2], color=[0, 0, 0])
 end
 
@@ -350,7 +350,7 @@ pro model_add_sun, absbrmax=absbrmax
   nt = nsz[2]
   br_tsun = brsun
   for k = 0, nt-1 do br_tsun[*, k] = brsun[*, nt-1-k]
-  brmax = max(abs(br_tsun)) 
+  brmax = max(abs(br_tsun))
   vc = float(br_tsun)
   ii = where(br_tsun gt brmax*0.25)
   vc[ii] = brmax*0.25
@@ -364,7 +364,7 @@ pro model_add_sun, absbrmax=absbrmax
       vert_colour[i, j*np:(j+1)*np-1] = vc[*, j]
     endfor
   endfor
-  
+
   mesh_obj, 4, vert, poly, replicate(1.00, np, nt)
   oModel.add, obj_new("IDLgrPolygon", data=vert, vert_colors=vert_colour, polygons=poly, shading=0)
 
@@ -435,6 +435,6 @@ function make_model, fname, nulls=nulls, separators=separators, sepsurf=sepsurf,
   if keyword_set(hcs_flines)     then model_add_hcs, nskip=nskip, draw='fieldlines'
   if keyword_set(hcs_separators) then model_add_separators, /hcs
   if keyword_set(separators)     then model_add_separators
-  
+
   return, oModel
 end
