@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import pickle
+import os
 from dataclasses import dataclass
+from enum import Enum
 from functools import cached_property
 
+import h5py
 import numpy as np
 
 from mhsxtrapy.b3d import WhichSolution, b3d
@@ -123,26 +125,45 @@ class Field3dData:
 
     def save(self, path):
         """
-        Save Field3dData object as pickle file.
+        Save Field3dData object as HDF5 file.
         """
-
-        for name, attribute in self.__dict__.items():
-            name = ".".join((name, "pkl"))
-            with open("/".join((path, name)), "wb") as f:
-                pickle.dump(attribute, f)
+        if os.path.isdir(path):
+            path = os.path.join(path, "field3d.h5")
+        with h5py.File(path, "w") as f:
+            for name, attribute in self.__dict__.items():
+                if isinstance(attribute, np.ndarray):
+                    f.create_dataset(name, data=attribute)
+                elif isinstance(attribute, Enum):
+                    f.attrs[name] = attribute.value
+                elif attribute is None:
+                    f.attrs[name] = "___NONE___"
+                else:
+                    f.attrs[name] = attribute
 
     @classmethod
     def load(cls, path):
         """
-        Load Field3dData object from pickle file.
+        Load Field3dData object from HDF5 file.
         """
-
-        my_model = {}
-        for name in cls.__annotations__:
-            file_name = ".".join((name, "pkl"))
-            with open("/".join((path, file_name)), "rb") as f:
-                my_model[name] = pickle.load(f)
-        return cls(**my_model)
+        _enum_fields = {
+            "solution": WhichSolution,
+            "flux_balance_state": FluxBalanceState,
+        }
+        if os.path.isdir(path):
+            path = os.path.join(path, "field3d.h5")
+        data = {}
+        with h5py.File(path, "r") as f:
+            for name in cls.__annotations__:
+                if name in f:
+                    data[name] = f[name][()]
+                elif name in f.attrs:
+                    val = f.attrs[name]
+                    if isinstance(val, str) and val == "___NONE___":
+                        val = None
+                    elif name in _enum_fields:
+                        val = _enum_fields[name](val)
+                    data[name] = val
+        return cls(**data)
 
     @cached_property
     def B0(self):
