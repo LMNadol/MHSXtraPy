@@ -241,8 +241,14 @@ class Field3dData:
             np.ndarray: 3D variation in pressure
         """
 
-        sol = get_solution(self.solution)
-        f = sol.f
+        sol = get_solution(
+            self.solution,
+            a=self.a,
+            b=self.b,
+            z0=self.z0,
+            deltaz=self.deltaz,
+            kappa=self.kappa,
+        )
 
         if self.flux_balance_state == FluxBalanceState.BALANCED:
             bz_matrix = self.field[:, :, :, 2]
@@ -260,31 +266,7 @@ class Field3dData:
 
         B0 = self.field[:, :, 0, 2].max()  # in Gauss
 
-        if (
-            self.solution == WhichSolution.NEUWIE
-            or self.solution == WhichSolution.NANEU
-        ):
-
-            assert (
-                self.z0 is not None and self.deltaz is not None and self.b is not None
-            )
-
-            return (
-                -f(z_matrix, self.z0, self.deltaz, self.a, self.b)  # normalised
-                / 2.0
-                * bz_matrix**2.0
-                / B0**2.0
-            )
-        elif self.solution == WhichSolution.LOW:
-
-            assert self.kappa is not None
-
-            return -f(z_matrix, self.a, self.kappa) / 2.0 * bz_matrix**2.0 / B0**2.0
-
-        else:
-            raise ValueError(
-                f"Invalid solution: {self.solution}. Expected 'LOW' or 'NEUWIE' or 'NANEU'."
-            )
+        return -sol.f(z_matrix) / 2.0 * bz_matrix**2.0 / B0**2.0
 
     @cached_property
     def ddensity(self) -> np.ndarray:
@@ -300,13 +282,17 @@ class Field3dData:
         Returns:
             np.ndarray: 3D variation in density
         """
-        sol = get_solution(self.solution)
-        f = sol.f
-        dfdz = sol.dfdz
+        sol = get_solution(
+            self.solution,
+            a=self.a,
+            b=self.b,
+            z0=self.z0,
+            deltaz=self.deltaz,
+            kappa=self.kappa,
+        )
 
         if self.flux_balance_state == FluxBalanceState.BALANCED:
             bz_matrix = self.field[:, :, :, 2]
-            bdotbz_matrix = np.zeros_like(bz_matrix)
             bdotbz_matrix = (
                 self.field[:, :, :, 0] * self.dfield[:, :, :, 0]
                 + self.field[:, :, :, 1] * self.dfield[:, :, :, 1]
@@ -314,7 +300,6 @@ class Field3dData:
             )  # in Gauss**2
         elif self.flux_balance_state == FluxBalanceState.UNBALANCED:
             bz_matrix = self.field[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 2]
-            bdotbz_matrix = np.zeros_like(bz_matrix)
             bdotbz_matrix = (
                 self.field[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 0]
                 * self.dfield[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 0]
@@ -333,36 +318,10 @@ class Field3dData:
 
         B0 = self.field[:, :, 0, 2].max()  # in Gauss
 
-        if (
-            self.solution == WhichSolution.NEUWIE
-            or self.solution == WhichSolution.NANEU
-        ):
-
-            assert (
-                self.z0 is not None and self.deltaz is not None and self.b is not None
-            )
-
-            return (
-                dfdz(z_matrix, self.z0, self.deltaz, self.a, self.b)  # normalised
-                / 2.0
-                * bz_matrix**2
-                / B0**2
-                + f(z_matrix, self.z0, self.deltaz, self.a, self.b)  # normalised
-                * bdotbz_matrix  # normalised
-                / B0**2
-            )
-        elif self.solution == WhichSolution.LOW:
-
-            assert self.kappa is not None
-
-            return (
-                dfdz(z_matrix, self.a, self.kappa) / 2.0 * bz_matrix**2 / B0**2
-                + f(z_matrix, self.a, self.kappa) * bdotbz_matrix / B0**2
-            )
-        else:
-            raise ValueError(
-                f"Invalid solution: {self.solution}. Expected 'LOW' or 'NEUWIE' or 'NANEU'."
-            )
+        return (
+            sol.dfdz(z_matrix) / 2.0 * bz_matrix**2 / B0**2
+            + sol.f(z_matrix) * bdotbz_matrix / B0**2
+        )
 
     @cached_property
     def fpressure(self) -> np.ndarray:
@@ -420,7 +379,7 @@ class Field3dData:
         )  #  *(B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L)
 
     @cached_property
-    def j3D(self) -> np.ndarray:
+    def j3d(self) -> np.ndarray:
         """
         Calculate current density at all grid points. For details see function j3d below.
 
@@ -431,7 +390,7 @@ class Field3dData:
         return j3d(self)
 
     @cached_property
-    def lf3D(self) -> np.ndarray:
+    def lf3d(self) -> np.ndarray:
         """
         Calculate Lorentz force at all grid points. For details see function lf3d below.
 
@@ -715,39 +674,21 @@ def j3d(field3d: Field3dData) -> np.ndarray:
         np.ndarray: current density
     """
 
-    sol = get_solution(field3d.solution)
-    f = sol.f
+    sol = get_solution(
+        field3d.solution,
+        a=field3d.a,
+        b=field3d.b,
+        z0=field3d.z0,
+        deltaz=field3d.deltaz,
+        kappa=field3d.kappa,
+    )
 
     j = np.zeros_like(field3d.field)
 
     j[:, :, :, 2] = field3d.alpha * field3d.field[:, :, :, 2] * 10**-4
 
     f_matrix = np.zeros_like(field3d.dfield[:, :, :, 0])
-
-    if (
-        field3d.solution == WhichSolution.NEUWIE
-        or field3d.solution == WhichSolution.NANEU
-    ):
-
-        assert (
-            field3d.z0 is not None
-            and field3d.deltaz is not None
-            and field3d.b is not None
-        )
-
-        f_matrix[:, :, :] = f(
-            field3d.z, field3d.z0, field3d.deltaz, field3d.a, field3d.b
-        )
-    elif field3d.solution == WhichSolution.LOW:
-
-        assert field3d.kappa is not None
-
-        f_matrix[:, :, :] = f(field3d.z, field3d.a, field3d.kappa)
-
-    else:
-        raise ValueError(
-            f"Invalid solution: {field3d.solution}. Expected 'LOW' or 'NEUWIE' or 'NANEU'."
-        )
+    f_matrix[:, :, :] = sol.f(field3d.z)
 
     j[:, :, :, 1] = (
         field3d.alpha * field3d.field[:, :, :, 1] * 10**-4
@@ -773,7 +714,7 @@ def lf3d(field3d: Field3dData) -> np.ndarray:
         np.ndarray: 3D Lorentz force
     """
 
-    j = field3d.j3D
+    j = field3d.j3d
 
     lf = np.zeros_like(field3d.field)
 

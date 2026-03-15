@@ -4,28 +4,36 @@ import numpy as np
 from numba import njit
 
 from .base import Solution
-from .neuwie import dfdz_nw, f_nw
+from .neukirch_wiegelmann import dfdz_nw, f_nw
 
-__all__ = ["NaNeuSolution", "phi", "dphidz"]
+__all__ = ["NaNeuSolution", "phi_nn", "dphidz_nn"]
 
 
 class NaNeuSolution(Solution):
 
-    def phi(self, z, p, q, z0, deltaz):
-        return phi(z, p, q, z0, deltaz)
+    def __init__(
+        self, z0: float, deltaz: float, a: float | None = None, b: float | None = None
+    ):
+        self.z0 = z0
+        self.deltaz = deltaz
+        self.a = a
+        self.b = b
 
-    def dphidz(self, z, p, q, z0, deltaz):
-        return dphidz(z, p, q, z0, deltaz)
+    def phi(self, z, p, q):
+        return phi_nn(z, p, q, self.z0, self.deltaz)
 
-    def f(self, z, z0, deltaz, a, b):
-        return f_nw(z, z0, deltaz, a, b)
+    def dphidz(self, z, p, q):
+        return dphidz_nn(z, p, q, self.z0, self.deltaz)
 
-    def dfdz(self, z, z0, deltaz, a, b):
-        return dfdz_nw(z, z0, deltaz, a, b)
+    def f(self, z):
+        return f_nw(z, self.z0, self.deltaz, self.a, self.b)
+
+    def dfdz(self, z):
+        return dfdz_nw(z, self.z0, self.deltaz, self.a, self.b)
 
 
 @njit
-def phi(
+def phi_nn(
     z: np.float64,
     p: np.ndarray,
     q: np.ndarray,
@@ -71,7 +79,7 @@ def phi(
 
 
 @njit
-def dphidz(
+def dphidz_nn(
     z: np.float64,
     p: np.ndarray,
     q: np.ndarray,

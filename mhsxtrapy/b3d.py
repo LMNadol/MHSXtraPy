@@ -235,29 +235,23 @@ def get_phi_dphi(
     phi_arr = np.zeros((nf, nf, nz))
     dphidz_arr = np.zeros((nf, nf, nz))
 
-    sol = get_solution(solution)
-    phi = sol.phi
-    dphidz = sol.dphidz
+    sol = get_solution(solution, z0=z0, deltaz=deltaz, kappa=kappa)
 
     if solution == WhichSolution.NANEU or solution == WhichSolution.NEUWIE:
 
-        assert z0 is not None and deltaz is not None
-
         for iz, z in enumerate(z_arr):
-            phi_arr[:, :, iz] = phi(z, p_arr, q_arr, z0, deltaz)
-            dphidz_arr[:, :, iz] = dphidz(z, p_arr, q_arr, z0, deltaz)
+            phi_arr[:, :, iz] = sol.phi(z, p_arr, q_arr)
+            dphidz_arr[:, :, iz] = sol.dphidz(z, p_arr, q_arr)
 
     elif solution == WhichSolution.LOW:
-
-        assert kappa is not None
 
         for iy in range(0, int(nf)):
             for ix in range(0, int(nf)):
                 q = q_arr[iy, ix]
                 p = p_arr[iy, ix]
                 for iz, z in enumerate(z_arr):
-                    phi_arr[iy, ix, iz] = phi(z, p, q, kappa)
-                    dphidz_arr[iy, ix, iz] = dphidz(z, p, q, kappa)
+                    phi_arr[iy, ix, iz] = sol.phi(z, p, q)
+                    dphidz_arr[iy, ix, iz] = sol.dphidz(z, p, q)
 
     return phi_arr, dphidz_arr
 

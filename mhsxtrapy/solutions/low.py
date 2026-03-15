@@ -10,17 +10,21 @@ __all__ = ["LowSolution", "phi_low", "dphidz_low", "f_low", "dfdz_low"]
 
 class LowSolution(Solution):
 
-    def phi(self, z, p, q, kappa):
-        return phi_low(z, p, q, kappa)
+    def __init__(self, kappa: float, a: float | None = None):
+        self.kappa = kappa
+        self.a = a
 
-    def dphidz(self, z, p, q, kappa):
-        return dphidz_low(z, p, q, kappa)
+    def phi(self, z, p, q):
+        return phi_low(z, p, q, self.kappa)
 
-    def f(self, z, a, kappa):
-        return f_low(z, a, kappa)
+    def dphidz(self, z, p, q):
+        return dphidz_low(z, p, q, self.kappa)
 
-    def dfdz(self, z, a, kappa):
-        return dfdz_low(z, a, kappa)
+    def f(self, z):
+        return f_low(z, self.a, self.kappa)
+
+    def dfdz(self, z):
+        return dfdz_low(z, self.a, self.kappa)
 
 
 def phi_low(z: np.float64, p: np.float64, q: np.float64, kappa: float) -> np.float64:

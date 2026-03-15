@@ -6,11 +6,11 @@ __all__ = ["Solution"]
 class Solution(ABC):
 
     @abstractmethod
-    def phi(self, z):
+    def phi(self, z, p, q):
         pass
 
     @abstractmethod
-    def dphidz(self, z):
+    def dphidz(self, z, p, q):
         pass
 
     @abstractmethod
@@ -21,5 +21,5 @@ class Solution(ABC):
     def dfdz(self, z):
         pass
 
-    def get_phi_dphi(self, z):
-        return self.phi(z), self.dphidz(z)
+    def get_phi_dphi(self, z, p, q):
+        return self.phi(z, p, q), self.dphidz(z, p, q)

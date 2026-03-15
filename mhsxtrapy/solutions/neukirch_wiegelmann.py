@@ -10,17 +10,25 @@ __all__ = ["NeuWieSolution", "phi_nw", "dphidz_nw", "f_nw", "dfdz_nw"]
 
 class NeuWieSolution(Solution):
 
-    def phi(self, z, p, q, z0, deltaz):
-        return phi_nw(z, p, q, z0, deltaz)
+    def __init__(
+        self, z0: float, deltaz: float, a: float | None = None, b: float | None = None
+    ):
+        self.z0 = z0
+        self.deltaz = deltaz
+        self.a = a
+        self.b = b
 
-    def dphidz(self, z, p, q, z0, deltaz):
-        return dphidz_nw(z, p, q, z0, deltaz)
+    def phi(self, z, p, q):
+        return phi_nw(z, p, q, self.z0, self.deltaz)
 
-    def f(self, z, z0, deltaz, a, b):
-        return f_nw(z, z0, deltaz, a, b)
+    def dphidz(self, z, p, q):
+        return dphidz_nw(z, p, q, self.z0, self.deltaz)
 
-    def dfdz(self, z, z0, deltaz, a, b):
-        return dfdz_nw(z, z0, deltaz, a, b)
+    def f(self, z):
+        return f_nw(z, self.z0, self.deltaz, self.a, self.b)
+
+    def dfdz(self, z):
+        return dfdz_nw(z, self.z0, self.deltaz, self.a, self.b)
 
 
 # @njit

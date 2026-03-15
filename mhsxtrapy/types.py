@@ -5,8 +5,8 @@ __all__ = ["WhichSolution", "FluxBalanceState"]
 
 class WhichSolution(Enum):
     LOW = "low"
-    NEUWIE = "neuwie"
-    NANEU = "naneu"
+    NEUKIRCH_WIEGELMANN = "neuwie"
+    NADOL_NEUKIRCH = "naneu"
 
 
 class FluxBalanceState(Enum):
