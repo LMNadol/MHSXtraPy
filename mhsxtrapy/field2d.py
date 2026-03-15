@@ -392,6 +392,7 @@ def resize_aia(data: Field2dData, aia_image: AIAMap) -> np.ndarray:
 
 
 def maximal_a(field: Field2dData, alpha: float, b: float) -> float:
+    from mhsxtrapy.b3d import compute_wavenumbers
 
     if field.flux_balance_state == FluxBalanceState.BALANCED:
         l = 1.0
@@ -409,16 +410,9 @@ def maximal_a(field: Field2dData, alpha: float, b: float) -> float:
     lxn = lx / l
     lyn = ly / l
 
-    if field.flux_balance_state == FluxBalanceState.BALANCED:
-        kx = np.arange(nf) * 2.0 * np.pi / lxn
-        ky = np.arange(nf) * 2.0 * np.pi / lyn
-    elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
-        kx = np.arange(nf) * np.pi / lxn
-        ky = np.arange(nf) * np.pi / lyn
-    else:
-        raise ValueError(
-            f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
-        )
+    kx, ky, k2 = compute_wavenumbers(
+        field.nx, field.ny, field.px, field.py, nf, field.flux_balance_state, lxn, lyn
+    )
 
     ones = 0.0 * np.arange(nf) + 1.0
 

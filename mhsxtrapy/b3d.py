@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from typing import Tuple
 
 import numpy as np
@@ -8,6 +9,51 @@ import numpy as np
 from mhsxtrapy.field2d import Field2dData, FluxBalanceState
 from mhsxtrapy.solutions import get_solution
 from mhsxtrapy.types import WhichSolution
+
+
+@dataclass
+class FourierCoefficients:
+    anm: np.ndarray
+    bnm: np.ndarray
+    cnm: np.ndarray
+    dnm: np.ndarray
+
+    def __truediv__(self, other):
+        return FourierCoefficients(
+            anm=self.anm / other,
+            bnm=self.bnm / other,
+            cnm=self.cnm / other,
+            dnm=self.dnm / other,
+        )
+
+
+@dataclass
+class TrigBasis:
+    sin_x: np.ndarray
+    cos_x: np.ndarray
+    sin_y: np.ndarray
+    cos_y: np.ndarray
+
+
+@dataclass
+class FourierMeta:
+    nx: int
+    ny: int
+    bfield: np.ndarray
+    dbz: np.ndarray
+
+
+@dataclass
+class FourierBasis:
+    coeffs: FourierCoefficients
+    trigfunc: TrigBasis
+    meta: FourierMeta
+
+
+@dataclass
+class MagneticField:
+    bfield: np.ndarray
+    dbz: np.ndarray
 
 
 def seehafer(
@@ -43,7 +89,7 @@ def seehafer(
 def xnm(
     bz: np.ndarray,
     nf: int,
-) -> Tuple:
+) -> FourierCoefficients:
     """
     Given the Seehafer-mirrored photospheric vertical component of the magnetic field returns
     coefficients anm, bnm, cnm, dnm for series expansion of the 3D magnetic field (for definition of anm
@@ -135,7 +181,7 @@ def xnm(
             -signal[centre_y + 0, centre_x + ix] + signal[centre_y + 0, centre_x - ix]
         ).imag
 
-    return anm, bnm, cnm, dnm
+    return FourierCoefficients(anm, bnm, cnm, dnm)
 
 
 def get_phi_dphi(
@@ -203,6 +249,207 @@ def get_phi_dphi(
     return phi_arr, dphidz_arr
 
 
+def compute_wavenumbers(nx, ny, px, py, nf, flux_balance_state, lxn, lyn) -> Tuple:
+
+    if flux_balance_state == FluxBalanceState.BALANCED:
+        kx = np.arange(nf) * 2.0 * np.pi / lxn
+        ky = np.arange(nf) * 2.0 * np.pi / lyn
+    elif flux_balance_state == FluxBalanceState.UNBALANCED:
+        kx = np.arange(nf) * np.pi / lxn
+        ky = np.arange(nf) * np.pi / lyn
+    else:
+        raise ValueError(
+            f"Invalid flux_balance_state: {flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
+        )
+
+    ones = 0.0 * np.arange(nf) + 1.0
+
+    k2 = np.outer(ky**2, ones) + np.outer(ones, kx**2)
+
+    return kx, ky, k2
+
+
+def _compute_fourier_coefficients(nf, field, k2, lxn, lyn, kx, ky) -> FourierBasis:
+    # Calls seehafer and xnm
+
+    if field.flux_balance_state == FluxBalanceState.BALANCED:
+        k2[0, 0] = (2.0 * np.pi / lxn) ** 2 + (2.0 * np.pi / lyn) ** 2
+
+        coeffs = xnm(field.bz, nf) / k2
+
+        nx = field.nx
+        ny = field.ny
+        bfield = np.zeros((ny, nx, field.nz, 3))
+        dbz = np.zeros((ny, nx, field.nz, 3))
+
+        # Use FFT-consistent grid for reconstruction: the FFT in xnm
+        # assumes sample spacing px = L/N, so positions must be j*px
+        # (not linspace which gives j*L/(N-1) and causes phase errors).
+        x_recon = np.arange(field.nx, dtype=np.float64) * field.px  # instead of field.x
+        y_recon = np.arange(field.ny, dtype=np.float64) * field.py  # instead of field.y
+        sin_x = np.sin(np.outer(kx, x_recon - lxn / 2.0))
+        sin_y = np.sin(np.outer(ky, y_recon - lyn / 2.0))
+        cos_x = np.cos(np.outer(kx, x_recon - lxn / 2.0))
+        cos_y = np.cos(np.outer(ky, y_recon - lyn / 2.0))
+    elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
+        k2[0, 0] = (np.pi / lxn) ** 2 + (np.pi / lyn) ** 2
+        k2[1, 0] = (np.pi / lxn) ** 2 + (np.pi / lyn) ** 2
+        k2[0, 1] = (np.pi / lxn) ** 2 + (np.pi / lyn) ** 2
+
+        seehafer_bz = seehafer(field.bz)
+
+        coeffs = xnm(seehafer_bz, nf) / k2
+        coeffs.bnm = np.zeros_like(coeffs.bnm)
+        coeffs.cnm = np.zeros_like(coeffs.cnm)
+        coeffs.dnm = np.zeros_like(coeffs.dnm)
+
+        nx = 2 * field.nx
+        ny = 2 * field.ny
+
+        bfield = np.zeros((ny, nx, field.nz, 3))
+        dbz = np.zeros((ny, nx, field.nz, 3))
+
+        # Use FFT-consistent grid for Seehafer domain reconstruction
+        x_big = (
+            np.arange(nx, dtype=np.float64) * field.px - field.nx * field.px
+        )  # instead of x_big = np.arange(2.0 * field.nx) * 2.0 * xmax / (2.0 * field.nx - 1) - xmax
+        y_big = (
+            np.arange(ny, dtype=np.float64) * field.py - field.ny * field.py
+        )  # instead of y_big = np.arange(2.0 * field.ny) * 2.0 * ymax / (2.0 * field.ny - 1) - ymax
+
+        sin_x = np.sin(np.outer(kx, x_big))
+        sin_y = np.sin(np.outer(ky, y_big))
+        cos_x = np.cos(np.outer(kx, x_big))
+        cos_y = np.cos(np.outer(ky, y_big))
+    else:
+        raise ValueError(
+            f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
+        )
+
+    trigfunc = TrigBasis(sin_x, cos_x, sin_y, cos_y)
+    meta = FourierMeta(nx, ny, bfield, dbz)
+
+    return FourierBasis(coeffs, trigfunc, meta)
+
+
+def _compute_field_at_height(
+    iz, nx, ny, nf, sin_x, cos_x, sin_y, cos_y, phi, dphi, coeffs, kx, ky, k2, alpha
+) -> MagneticField:
+    # Single z-level field computation
+
+    bfield_at_z = np.zeros((ny, nx, 3))
+    dbz_at_z = np.zeros((ny, nx, 3))
+
+    ones = 0.0 * np.arange(nf) + 1.0
+    ky_grid = np.outer(ky, ones)
+    kx_grid = np.outer(ones, kx)
+
+    coeffs1 = np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.anm)
+    coeffs2 = np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.bnm)
+    coeffs3 = np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.cnm)
+    coeffs4 = np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.dnm)
+
+    bfield_at_z[:, :, 2] = (
+        np.matmul(sin_y.T, np.matmul(coeffs1, sin_x))
+        + np.matmul(cos_y.T, np.matmul(coeffs2, sin_x))
+        + np.matmul(sin_y.T, np.matmul(coeffs3, cos_x))
+        + np.matmul(cos_y.T, np.matmul(coeffs4, cos_x))
+    )
+
+    coeffs1 = np.multiply(
+        np.multiply(coeffs.anm, dphi[:, :, iz]), ky_grid
+    ) + alpha * np.multiply(np.multiply(coeffs.dnm, phi[:, :, iz]), kx_grid)
+    coeffs2 = -np.multiply(
+        np.multiply(coeffs.dnm, dphi[:, :, iz]), ky_grid
+    ) - alpha * np.multiply(np.multiply(coeffs.anm, phi[:, :, iz]), kx_grid)
+    coeffs3 = -np.multiply(
+        np.multiply(coeffs.bnm, dphi[:, :, iz]), ky_grid
+    ) + alpha * np.multiply(np.multiply(coeffs.cnm, phi[:, :, iz]), kx_grid)
+    coeffs4 = np.multiply(
+        np.multiply(coeffs.cnm, dphi[:, :, iz]), ky_grid
+    ) - alpha * np.multiply(np.multiply(coeffs.bnm, phi[:, :, iz]), kx_grid)
+
+    bfield_at_z[:, :, 0] = (
+        np.matmul(cos_y.T, np.matmul(coeffs4, cos_x))
+        + np.matmul(sin_y.T, np.matmul(coeffs3, sin_x))
+        + np.matmul(cos_y.T, np.matmul(coeffs1, sin_x))
+        + np.matmul(sin_y.T, np.matmul(coeffs2, cos_x))
+    )
+
+    coeffs1 = -np.multiply(
+        np.multiply(coeffs.cnm, dphi[:, :, iz]), kx_grid
+    ) - alpha * np.multiply(np.multiply(coeffs.bnm, phi[:, :, iz]), ky_grid)
+    coeffs2 = np.multiply(
+        np.multiply(coeffs.bnm, dphi[:, :, iz]), kx_grid
+    ) + alpha * np.multiply(np.multiply(coeffs.cnm, phi[:, :, iz]), ky_grid)
+    coeffs3 = np.multiply(
+        np.multiply(coeffs.anm, dphi[:, :, iz]), kx_grid
+    ) - alpha * np.multiply(np.multiply(coeffs.dnm, phi[:, :, iz]), ky_grid)
+    coeffs4 = -np.multiply(
+        np.multiply(coeffs.dnm, dphi[:, :, iz]), kx_grid
+    ) + alpha * np.multiply(np.multiply(coeffs.anm, phi[:, :, iz]), ky_grid)
+
+    bfield_at_z[:, :, 1] = (
+        np.matmul(cos_y.T, np.matmul(coeffs2, cos_x))
+        + np.matmul(sin_y.T, np.matmul(coeffs1, sin_x))
+        + np.matmul(sin_y.T, np.matmul(coeffs3, cos_x))
+        + np.matmul(cos_y.T, np.matmul(coeffs4, sin_x))
+    )
+
+    coeffs1 = np.multiply(np.multiply(k2, dphi[:, :, iz]), coeffs.anm)
+    coeffs2 = np.multiply(np.multiply(k2, dphi[:, :, iz]), coeffs.bnm)
+    coeffs3 = np.multiply(np.multiply(k2, dphi[:, :, iz]), coeffs.cnm)
+    coeffs4 = np.multiply(np.multiply(k2, dphi[:, :, iz]), coeffs.dnm)
+
+    dbz_at_z[:, :, 2] = (
+        np.matmul(sin_y.T, np.matmul(coeffs1, sin_x))
+        + np.matmul(cos_y.T, np.matmul(coeffs2, sin_x))
+        + np.matmul(sin_y.T, np.matmul(coeffs3, cos_x))
+        + np.matmul(cos_y.T, np.matmul(coeffs4, cos_x))
+    )
+
+    coeffs1 = np.multiply(
+        np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.anm), kx_grid
+    )
+    coeffs2 = np.multiply(
+        np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.bnm), kx_grid
+    )
+    coeffs3 = -np.multiply(
+        np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.cnm), kx_grid
+    )
+    coeffs4 = -np.multiply(
+        np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.dnm), kx_grid
+    )
+
+    dbz_at_z[:, :, 0] = (
+        np.matmul(sin_y.T, np.matmul(coeffs1, cos_x))
+        + np.matmul(cos_y.T, np.matmul(coeffs2, cos_x))
+        + np.matmul(sin_y.T, np.matmul(coeffs3, sin_x))
+        + np.matmul(cos_y.T, np.matmul(coeffs4, sin_x))
+    )
+
+    coeffs1 = np.multiply(
+        np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.anm), ky_grid
+    )
+    coeffs2 = -np.multiply(
+        np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.bnm), ky_grid
+    )
+    coeffs3 = +np.multiply(
+        np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.cnm), ky_grid
+    )
+    coeffs4 = -np.multiply(
+        np.multiply(np.multiply(k2, phi[:, :, iz]), coeffs.dnm), ky_grid
+    )
+    dbz_at_z[:, :, 1] = (
+        np.matmul(cos_y.T, np.matmul(coeffs1, sin_x))
+        + np.matmul(sin_y.T, np.matmul(coeffs2, sin_x))
+        + np.matmul(cos_y.T, np.matmul(coeffs3, cos_x))
+        + np.matmul(sin_y.T, np.matmul(coeffs4, cos_x))
+    )
+
+    return MagneticField(bfield_at_z, dbz_at_z)
+
+
 def b3d(
     field: Field2dData,
     alpha: float,
@@ -254,87 +501,24 @@ def b3d(
             f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
         )
 
-    xmax, ymax = field.x[-1], field.y[-1]
+    # xmax, ymax = field.x[-1], field.y[-1]
 
     lx = field.nx * field.px * l
     ly = field.ny * field.py * l
     lxn = lx / l
     lyn = ly / l
 
-    if field.flux_balance_state == FluxBalanceState.BALANCED:
-        kx = np.arange(nf) * 2.0 * np.pi / lxn
-        ky = np.arange(nf) * 2.0 * np.pi / lyn
-    elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
-        kx = np.arange(nf) * np.pi / lxn
-        ky = np.arange(nf) * np.pi / lyn
-    else:
-        raise ValueError(
-            f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
-        )
+    kx, ky, k2 = compute_wavenumbers(
+        field.nx, field.ny, field.px, field.py, nf, field.flux_balance_state, lxn, lyn
+    )
 
-    ones = 0.0 * np.arange(nf) + 1.0
+    # ones = 0.0 * np.arange(nf) + 1.0
 
-    ky_grid = np.outer(ky, ones)
-    kx_grid = np.outer(ones, kx)
+    basis = _compute_fourier_coefficients(nf, field, k2, lxn, lyn, kx, ky)
 
-    k2 = np.outer(ky**2, ones) + np.outer(ones, kx**2)
-
-    if field.flux_balance_state == FluxBalanceState.BALANCED:
-        k2[0, 0] = (2.0 * np.pi / lxn) ** 2 + (2.0 * np.pi / lyn) ** 2
-
-        anm, bnm, cnm, dnm = np.divide(xnm(field.bz, nf), k2)
-
-        bfield = np.zeros((field.ny, field.nx, field.nz, 3))
-        dbz = np.zeros((field.ny, field.nx, field.nz, 3))
-
-        # sin_x = np.sin(np.outer(kx, field.x - lxn / 2.0))
-        # sin_y = np.sin(np.outer(ky, field.y - lyn / 2.0))
-        # cos_x = np.cos(np.outer(kx, field.x - lxn / 2.0))
-        # cos_y = np.cos(np.outer(ky, field.y - lyn / 2.0))
-
-        # Use FFT-consistent grid for reconstruction: the FFT in xnm
-        # assumes sample spacing px = L/N, so positions must be j*px
-        # (not linspace which gives j*L/(N-1) and causes phase errors).
-        x_recon = np.arange(field.nx, dtype=np.float64) * field.px  # instead of field.x
-        y_recon = np.arange(field.ny, dtype=np.float64) * field.py  # instead of field.y
-        sin_x = np.sin(np.outer(kx, x_recon - lxn / 2.0))
-        sin_y = np.sin(np.outer(ky, y_recon - lyn / 2.0))
-        cos_x = np.cos(np.outer(kx, x_recon - lxn / 2.0))
-        cos_y = np.cos(np.outer(ky, y_recon - lyn / 2.0))
-    elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
-        k2[0, 0] = (np.pi / lxn) ** 2 + (np.pi / lyn) ** 2
-        k2[1, 0] = (np.pi / lxn) ** 2 + (np.pi / lyn) ** 2
-        k2[0, 1] = (np.pi / lxn) ** 2 + (np.pi / lyn) ** 2
-
-        seehafer_bz = seehafer(field.bz)
-
-        anm, bnm, cnm, dnm = np.divide(xnm(seehafer_bz, nf), k2)
-        bnm = np.zeros_like(bnm)
-        cnm = np.zeros_like(cnm)
-        dnm = np.zeros_like(dnm)
-
-        bfield = np.zeros((2 * field.ny, 2 * field.nx, field.nz, 3))
-        dbz = np.zeros((2 * field.ny, 2 * field.nx, field.nz, 3))
-
-        # x_big = np.arange(2.0 * field.nx) * 2.0 * xmax / (2.0 * field.nx - 1) - xmax
-        # y_big = np.arange(2.0 * field.ny) * 2.0 * ymax / (2.0 * field.ny - 1) - ymax
-
-        # Use FFT-consistent grid for Seehafer domain reconstruction
-        x_big = (
-            np.arange(2 * field.nx, dtype=np.float64) * field.px - field.nx * field.px
-        )  # instead of x_big = np.arange(2.0 * field.nx) * 2.0 * xmax / (2.0 * field.nx - 1) - xmax
-        y_big = (
-            np.arange(2 * field.ny, dtype=np.float64) * field.py - field.ny * field.py
-        )  # instead of y_big = np.arange(2.0 * field.ny) * 2.0 * ymax / (2.0 * field.ny - 1) - ymax
-
-        sin_x = np.sin(np.outer(kx, x_big))
-        sin_y = np.sin(np.outer(ky, y_big))
-        cos_x = np.cos(np.outer(kx, x_big))
-        cos_y = np.cos(np.outer(ky, y_big))
-    else:
-        raise ValueError(
-            f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
-        )
+    coeffs = basis.coeffs
+    trig_func = basis.trigfunc
+    meta = basis.meta
 
     if solution == WhichSolution.NEUWIE or solution == WhichSolution.NANEU:
         assert z0 is not None and deltaz is not None and b is not None
@@ -362,102 +546,35 @@ def b3d(
         kappa=kappa,
     )
 
+    bfield = meta.bfield
+    dbz = meta.dbz
+
     for iz in range(0, field.nz):
 
-        coeffs1 = np.multiply(np.multiply(k2, phi[:, :, iz]), anm)
-        coeffs2 = np.multiply(np.multiply(k2, phi[:, :, iz]), bnm)
-        coeffs3 = np.multiply(np.multiply(k2, phi[:, :, iz]), cnm)
-        coeffs4 = np.multiply(np.multiply(k2, phi[:, :, iz]), dnm)
-
-        bfield[:, :, iz, 2] = (
-            np.matmul(sin_y.T, np.matmul(coeffs1, sin_x))
-            + np.matmul(cos_y.T, np.matmul(coeffs2, sin_x))
-            + np.matmul(sin_y.T, np.matmul(coeffs3, cos_x))
-            + np.matmul(cos_y.T, np.matmul(coeffs4, cos_x))
+        mfield = _compute_field_at_height(
+            iz,
+            meta.nx,
+            meta.ny,
+            nf,
+            trig_func.sin_x,
+            trig_func.cos_x,
+            trig_func.sin_y,
+            trig_func.cos_y,
+            phi,
+            dphi,
+            coeffs,
+            kx,
+            ky,
+            k2,
+            alpha,
         )
 
-        coeffs1 = np.multiply(
-            np.multiply(anm, dphi[:, :, iz]), ky_grid
-        ) + alpha * np.multiply(np.multiply(dnm, phi[:, :, iz]), kx_grid)
-        coeffs2 = -np.multiply(
-            np.multiply(dnm, dphi[:, :, iz]), ky_grid
-        ) - alpha * np.multiply(np.multiply(anm, phi[:, :, iz]), kx_grid)
-        coeffs3 = -np.multiply(
-            np.multiply(bnm, dphi[:, :, iz]), ky_grid
-        ) + alpha * np.multiply(np.multiply(cnm, phi[:, :, iz]), kx_grid)
-        coeffs4 = np.multiply(
-            np.multiply(cnm, dphi[:, :, iz]), ky_grid
-        ) - alpha * np.multiply(np.multiply(bnm, phi[:, :, iz]), kx_grid)
+        bfield[:, :, iz, 2] = mfield.bfield[:, :, 2]
+        bfield[:, :, iz, 0] = mfield.bfield[:, :, 0]
+        bfield[:, :, iz, 1] = mfield.bfield[:, :, 1]
 
-        bfield[:, :, iz, 0] = (
-            np.matmul(cos_y.T, np.matmul(coeffs4, cos_x))
-            + np.matmul(sin_y.T, np.matmul(coeffs3, sin_x))
-            + np.matmul(cos_y.T, np.matmul(coeffs1, sin_x))
-            + np.matmul(sin_y.T, np.matmul(coeffs2, cos_x))
-        )
-
-        coeffs1 = -np.multiply(
-            np.multiply(cnm, dphi[:, :, iz]), kx_grid
-        ) - alpha * np.multiply(np.multiply(bnm, phi[:, :, iz]), ky_grid)
-        coeffs2 = np.multiply(
-            np.multiply(bnm, dphi[:, :, iz]), kx_grid
-        ) + alpha * np.multiply(np.multiply(cnm, phi[:, :, iz]), ky_grid)
-        coeffs3 = np.multiply(
-            np.multiply(anm, dphi[:, :, iz]), kx_grid
-        ) - alpha * np.multiply(np.multiply(dnm, phi[:, :, iz]), ky_grid)
-        coeffs4 = -np.multiply(
-            np.multiply(dnm, dphi[:, :, iz]), kx_grid
-        ) + alpha * np.multiply(np.multiply(anm, phi[:, :, iz]), ky_grid)
-
-        bfield[:, :, iz, 1] = (
-            np.matmul(cos_y.T, np.matmul(coeffs2, cos_x))
-            + np.matmul(sin_y.T, np.matmul(coeffs1, sin_x))
-            + np.matmul(sin_y.T, np.matmul(coeffs3, cos_x))
-            + np.matmul(cos_y.T, np.matmul(coeffs4, sin_x))
-        )
-
-        coeffs1 = np.multiply(np.multiply(k2, dphi[:, :, iz]), anm)
-        coeffs2 = np.multiply(np.multiply(k2, dphi[:, :, iz]), bnm)
-        coeffs3 = np.multiply(np.multiply(k2, dphi[:, :, iz]), cnm)
-        coeffs4 = np.multiply(np.multiply(k2, dphi[:, :, iz]), dnm)
-        dbz[:, :, iz, 2] = (
-            np.matmul(sin_y.T, np.matmul(coeffs1, sin_x))
-            + np.matmul(cos_y.T, np.matmul(coeffs2, sin_x))
-            + np.matmul(sin_y.T, np.matmul(coeffs3, cos_x))
-            + np.matmul(cos_y.T, np.matmul(coeffs4, cos_x))
-        )
-
-        coeffs1 = np.multiply(np.multiply(np.multiply(k2, phi[:, :, iz]), anm), kx_grid)
-        coeffs2 = np.multiply(np.multiply(np.multiply(k2, phi[:, :, iz]), bnm), kx_grid)
-        coeffs3 = -np.multiply(
-            np.multiply(np.multiply(k2, phi[:, :, iz]), cnm), kx_grid
-        )
-        coeffs4 = -np.multiply(
-            np.multiply(np.multiply(k2, phi[:, :, iz]), dnm), kx_grid
-        )
-
-        dbz[:, :, iz, 0] = (
-            np.matmul(sin_y.T, np.matmul(coeffs1, cos_x))
-            + np.matmul(cos_y.T, np.matmul(coeffs2, cos_x))
-            + np.matmul(sin_y.T, np.matmul(coeffs3, sin_x))
-            + np.matmul(cos_y.T, np.matmul(coeffs4, sin_x))
-        )
-
-        coeffs1 = np.multiply(np.multiply(np.multiply(k2, phi[:, :, iz]), anm), ky_grid)
-        coeffs2 = -np.multiply(
-            np.multiply(np.multiply(k2, phi[:, :, iz]), bnm), ky_grid
-        )
-        coeffs3 = +np.multiply(
-            np.multiply(np.multiply(k2, phi[:, :, iz]), cnm), ky_grid
-        )
-        coeffs4 = -np.multiply(
-            np.multiply(np.multiply(k2, phi[:, :, iz]), dnm), ky_grid
-        )
-        dbz[:, :, iz, 1] = (
-            np.matmul(cos_y.T, np.matmul(coeffs1, sin_x))
-            + np.matmul(sin_y.T, np.matmul(coeffs2, sin_x))
-            + np.matmul(cos_y.T, np.matmul(coeffs3, cos_x))
-            + np.matmul(sin_y.T, np.matmul(coeffs4, cos_x))
-        )
+        dbz[:, :, iz, 2] = mfield.dbz[:, :, 2]
+        dbz[:, :, iz, 0] = mfield.dbz[:, :, 0]
+        dbz[:, :, iz, 1] = mfield.dbz[:, :, 1]
 
     return bfield, dbz
