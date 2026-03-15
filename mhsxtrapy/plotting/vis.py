@@ -4,87 +4,41 @@ import math
 import os
 from typing import Literal, Tuple
 
-import matplotlib.pyplot as plt
-from matplotlib import colors, rc
 import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
-from scipy.ndimage import maximum_filter, minimum_filter, label, find_objects
-from scipy.interpolate import griddata
-
+from matplotlib import colors, rc
+from scipy.interpolate import griddata, interp1d
+from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 from sunpy.map.sources import AIAMap
 
 from mhsxtrapy.field2d import Field2dData
 from mhsxtrapy.field3d import Field3dData, FluxBalanceState
 from mhsxtrapy.msat.pyvis.fieldline3d import fieldline3d
-from mhsxtrapy.plotting.plot_unbalanced import (
-    plot_ddensity_xy as plot_ddensity_xy_unbalanced,
-)
-from mhsxtrapy.plotting.plot_unbalanced import (
-    plot_dpressure_xy as plot_dpressure_xy_unbalanced,
-)
-from mhsxtrapy.plotting.plot_unbalanced import (
-    plot_magnetogram_3D as plot_magnetogram_3D_unbalanced,
-)
-from mhsxtrapy.plotting.plot_balanced import (
-    plot_ddensity_xy as plot_ddensity_xy_balanced,
-)
-from mhsxtrapy.plotting.plot_balanced import (
-    plot_dpressure_xy as plot_dpressure_xy_balanced,
-)
-from mhsxtrapy.plotting.plot_balanced import (
-    plot_magnetogram_3D as plot_magnetogram_3D_balanced,
-)
 
-from scipy.interpolate import interp1d
+from ._3d import plot_magnetogram_3D as plot_3D
+from ._pp import plot_ddensity_xy as plot_dd
+from ._pp import plot_dpressure_xy as plot_dp
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=True)
 plt.rcParams["text.usetex"] = False
 
-cmap_magneto = colors.LinearSegmentedColormap.from_list(
-    "cmap_magneto",
-    (
-        # Edit this gradient at https://eltos.github.io/gradient/#magnetogram=2D2D2D-D3D3D3
-        (0.000, (0.176, 0.176, 0.176)),
-        (1.000, (1.000, 1.000, 1.000)),
-    ),
-)
+from mhsxtrapy.constants import G_SOLAR, MU0, L
 
-cmap_pressure = colors.LinearSegmentedColormap.from_list(
-    "cmap_pressure",
-    (
-        # Edit this gradient at https://eltos.github.io/gradient/#cmap=FDF8ED-F1F6FC-D0CBF4-9F9FF9-8080F8-5556B1-3A369F-24216C-151920
-        (0.000, (0.992, 0.973, 0.929)),
-        (0.125, (0.945, 0.965, 0.988)),
-        (0.250, (0.816, 0.796, 0.957)),
-        (0.375, (0.624, 0.624, 0.976)),
-        (0.500, (0.502, 0.502, 0.973)),
-        (0.625, (0.333, 0.337, 0.694)),
-        (0.750, (0.227, 0.212, 0.624)),
-        (0.875, (0.141, 0.129, 0.424)),
-        (1.000, (0.082, 0.098, 0.125)),
-    ),
+from ._core import (
+    _get_coordinates,
+    _make_boxedges,
+    calculate_tick_count,
+    cmap_aia,
+    cmap_density,
+    cmap_magneto,
+    cmap_pressure,
+    detect_footpoints,
+    norm_aia,
+    norm_hmi,
+    set_axis_labels,
 )
-
-cmap_density = colors.LinearSegmentedColormap.from_list(
-    "cmap_density",
-    (
-        # Edit this gradient at https://eltos.github.io/gradient/#cmap=FDF8ED-FCF1F8-F4CBE4-F99FCB-F880C0-D35E7E-BD2E49-871821-201515
-        (0.000, (0.992, 0.973, 0.929)),
-        (0.125, (0.988, 0.945, 0.973)),
-        (0.250, (0.957, 0.796, 0.894)),
-        (0.375, (0.976, 0.624, 0.796)),
-        (0.500, (0.973, 0.502, 0.753)),
-        (0.625, (0.827, 0.369, 0.494)),
-        (0.750, (0.741, 0.180, 0.286)),
-        (0.875, (0.529, 0.094, 0.129)),
-        (1.000, (0.125, 0.082, 0.082)),
-    ),
-)
-
-MU0 = 1.25663706 * 10**-6
-L = 10**6
-G_SOLAR = 272.2
 
 
 def plot_magnetogram_2D(data: Field2dData) -> None:
@@ -270,13 +224,7 @@ def plot_magnetogram_3D(
         footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
     """
 
-    if data.flux_balance_state == FluxBalanceState.BALANCED:
-
-        plot_magnetogram_3D_balanced(data, view, footpoints, boundary)
-
-    elif data.flux_balance_state == FluxBalanceState.UNBALANCED:
-
-        plot_magnetogram_3D_unbalanced(data, view, footpoints, boundary)
+    plot_3D(data, view, footpoints, boundary)
 
 
 def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
@@ -288,13 +236,7 @@ def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
         z (np.float64): height z at which variation is plotted
     """
 
-    if data.flux_balance_state == FluxBalanceState.BALANCED:
-
-        plot_dpressure_xy_balanced(data, z)
-
-    elif data.flux_balance_state == FluxBalanceState.UNBALANCED:
-
-        plot_dpressure_xy_unbalanced(data, z)
+    plot_dp(data, z)
 
 
 def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
@@ -306,13 +248,7 @@ def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
         z (np.float64): height z at which variation is plotted
     """
 
-    if data.flux_balance_state == FluxBalanceState.BALANCED:
-
-        plot_ddensity_xy_balanced(data, z)
-
-    elif data.flux_balance_state == FluxBalanceState.UNBALANCED:
-
-        plot_ddensity_xy_unbalanced(data, z)
+    plot_dd(data, z)
 
 
 def find_center(data: Field3dData) -> Tuple:
