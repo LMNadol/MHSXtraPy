@@ -51,6 +51,14 @@ class Field2dData:
 
     EUV: np.ndarray | None = None
 
+    def __repr__(self) -> str:
+        euv_info = f", EUV={self.EUV.shape}" if self.EUV is not None else ""
+        return (
+            f"Field2dData(nx={self.nx}, ny={self.ny}, nz={self.nz}, nf={self.nf}, "
+            f"px={self.px}, py={self.py}, pz={self.pz}, "
+            f"bz={self.bz.shape}, flux_balance={self.flux_balance_state.value}{euv_info})"
+        )
+
     # @classmethod
     # def from_SHARP_object(cls, sharpdata: SHARPdata):
 
@@ -95,6 +103,40 @@ class Field2dData:
     #             sharpdata.bz,
     #             flux_balance_state=FluxBalanceState.UNBALANCED,
     #         )
+
+    @classmethod
+    def from_array(cls, bz, pixel_size, nz, pz):
+
+        nx = bz.shape[1]
+        ny = bz.shape[0]
+        px = py = pixel_size
+
+        nf = min(nx, ny)
+
+        # Use FFT-consistent grid: spacing = px = L/N (not linspace which gives L/(N-1))
+        x_arr = np.arange(nx, dtype=np.float64) * px
+        y_arr = np.arange(ny, dtype=np.float64) * py
+        z_arr = np.arange(nz, dtype=np.float64) * pz
+
+        if check_fluxbalance(bz):
+            fb_state = FluxBalanceState.BALANCED
+        else:
+            fb_state = FluxBalanceState.UNBALANCED
+
+        return Field2dData(
+            nx,
+            ny,
+            nz,
+            nf,
+            px,
+            py,
+            pz,
+            x_arr,
+            y_arr,
+            z_arr,
+            bz,
+            flux_balance_state=fb_state,
+        )
 
     @classmethod
     def from_fits_SolarOrbiter(
@@ -170,7 +212,7 @@ class Field2dData:
         y = np.arange(ny, dtype=np.float64) * py
         z = np.arange(nz, dtype=np.float64) * pz
 
-        if np.fabs(check_fluxbalance(image_cut)) < FLUX_BALANCE_THRESHOLD:
+        if check_fluxbalance(image_cut):
             return Field2dData(
                 nx,
                 ny,
@@ -293,7 +335,7 @@ class Field2dData:
         y = np.arange(ny, dtype=np.float64) * py
         z = np.arange(nz, dtype=np.float64) * pz
 
-        if np.fabs(check_fluxbalance(image.data)) < FLUX_BALANCE_THRESHOLD:
+        if check_fluxbalance(image.data):
             data2d = Field2dData(
                 nx,
                 ny,
@@ -336,7 +378,7 @@ class Field2dData:
         return data2d
 
 
-def check_fluxbalance(bz: np.ndarray) -> float:
+def check_fluxbalance(bz: np.ndarray) -> bool:
     """
     Summation of flux through the bottom boundary (photospheric Bz) normalised
     by the sum of absolute values. Value between -1 and 1, corresponding to entirely
@@ -350,7 +392,7 @@ def check_fluxbalance(bz: np.ndarray) -> float:
     Returns:
         float: summation of flux through bz
     """
-    return np.sum(bz) / np.sum(np.fabs(bz))
+    return np.fabs(np.sum(bz) / np.sum(np.fabs(bz))) < FLUX_BALANCE_THRESHOLD
 
 
 def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:

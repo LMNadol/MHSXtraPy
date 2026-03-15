@@ -72,12 +72,35 @@ class Field3dData:
     solution: WhichSolution
 
     b: float | None = None
+
     z0: float | None = None
     deltaz: float | None = None
 
     kappa: float | None = None
 
     EUV: np.ndarray | None = None
+
+    def __repr__(self) -> str:
+        extras = []
+        if self.b is not None:
+            extras.append(f"b={self.b}")
+        if self.z0 is not None:
+            extras.append(f"z0={self.z0}")
+        if self.deltaz is not None:
+            extras.append(f"deltaz={self.deltaz}")
+        if self.kappa is not None:
+            extras.append(f"kappa={self.kappa}")
+        if self.EUV is not None:
+            extras.append(f"EUV={self.EUV.shape}")
+        extra_str = ", ".join(extras)
+        if extra_str:
+            extra_str = ", " + extra_str
+        return (
+            f"Field3dData(nx={self.nx}, ny={self.ny}, nz={self.nz}, nf={self.nf}, "
+            f"field={self.field.shape}, solution={self.solution.value}, "
+            f"alpha={self.alpha}, a={self.a}, "
+            f"flux_balance={self.flux_balance_state.value}{extra_str})"
+        )
 
     def save(self, path):
         """
