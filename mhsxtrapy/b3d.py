@@ -505,10 +505,10 @@ def b3d(
 
     if field.flux_balance_state == FluxBalanceState.BALANCED:
         nf = int(np.floor(field.nf / 2))
-        ell = 1.0
+        lengthscale = 1.0
     elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
         nf = field.nf
-        ell = 2.0
+        lengthscale = 2.0
     else:
         raise ValueError(
             f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
@@ -516,10 +516,10 @@ def b3d(
 
     # xmax, ymax = field.x[-1], field.y[-1]
 
-    lx = field.nx * field.px * ell
-    ly = field.ny * field.py * ell
-    lxn = lx / ell
-    lyn = ly / ell
+    lx = field.nx * field.px * lengthscale
+    ly = field.ny * field.py * lengthscale
+    lxn = lx / lengthscale
+    lyn = ly / lengthscale
 
     kx, ky, k2 = compute_wavenumbers(
         field.nx, field.ny, field.px, field.py, nf, field.flux_balance_state, lxn, lyn

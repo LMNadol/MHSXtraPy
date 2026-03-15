@@ -181,6 +181,8 @@ class Field2dData:
 
             hdr = data[0].header  # type: ignore
             dist = hdr["DSUN_OBS"]
+            # px_unit = hdr["CUNIT1"]
+            # py_unit = hdr["CUNIT2"]
             px_arcsec = hdr["CDELT1"]
             py_arcsec = hdr["CDELT2"]
 
@@ -293,6 +295,8 @@ class Field2dData:
         image = hmi_image.submap(left_corner, top_right=right_corner)
 
         dist = hdr["DSUN_OBS"]
+        # px_unit = hdr["CUNIT1"]
+        # py_unit = hdr["CUNIT2"]
         px_arcsec = hdr["CDELT1"]
         py_arcsec = hdr["CDELT2"]
 
@@ -421,20 +425,20 @@ def maximal_a(field: Field2dData, alpha: float, b: float) -> float:
     from mhsxtrapy.b3d import compute_wavenumbers
 
     if field.flux_balance_state == FluxBalanceState.BALANCED:
-        ell = 1.0
+        lengthscale = 1.0
         nf = int(np.floor(field.nf / 2))
     elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
-        ell = 2.0
+        lengthscale = 2.0
         nf = field.nf
     else:
         raise ValueError(
             f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
         )
 
-    lx = field.nx * field.px * ell
-    ly = field.ny * field.py * ell
-    lxn = lx / ell
-    lyn = ly / ell
+    lx = field.nx * field.px * lengthscale
+    ly = field.ny * field.py * lengthscale
+    lxn = lx / lengthscale
+    lyn = ly / lengthscale
 
     kx, ky, k2 = compute_wavenumbers(
         field.nx, field.ny, field.px, field.py, nf, field.flux_balance_state, lxn, lyn
