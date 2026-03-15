@@ -1,21 +1,20 @@
 from __future__ import annotations
 
 import os
-from typing import Literal, Tuple
+from typing import Literal
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
 from scipy.interpolate import interp1d
-from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
 from mhsxtrapy.constants import DEFAULT_N_LINES, DEFAULT_PIXEL_STRIDE, G_SOLAR, MU0, L
 from mhsxtrapy.field2d import Field2dData
 from mhsxtrapy.field3d import Field3dData
 
 from ._3d import plot_magnetogram_3D as plot_3D
-from ._core import cmap_magneto, detect_footpoints
+from ._core import cmap_magneto, detect_footpoints, find_center
 from ._pp import plot_ddensity_xy as plot_dd
 from ._pp import plot_dpressure_xy as plot_dp
 
@@ -258,55 +257,6 @@ def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
     """
 
     plot_dd(data, z)
-
-
-def find_center(data: Field3dData) -> Tuple:
-    """
-    Find centres of poles on photospheric magentogram.
-    """
-
-    _, xmax, _, ymax, _, _ = (
-        data.x[0],
-        data.x[-1],
-        data.y[0],
-        data.y[-1],
-        data.z[0],
-        data.z[-1],
-    )
-
-    neighborhood_size = data.nx / 1.0
-    threshold = 1.0
-
-    data_max = maximum_filter(data.bz, neighborhood_size)  # mode ='reflect'
-    maxima = data.bz == data_max
-    data_min = minimum_filter(data.bz, neighborhood_size)
-    minima = data.bz == data_min
-
-    diff = (data_max - data_min) > threshold
-    maxima[diff == 0] = 0
-    minima[diff == 0] = 0
-
-    labeled_sources, num_objects_sources = label(maxima)  # type: ignore
-    slices_sources = find_objects(labeled_sources)
-    x_sources, y_sources = [], []
-
-    labeled_sinks, num_objects_sinks = label(minima)  # type: ignore
-    slices_sinks = find_objects(labeled_sinks)
-    x_sinks, y_sinks = [], []
-
-    for dy, dx in slices_sources:
-        x_center = (dx.start + dx.stop - 1) / 2
-        x_sources.append(x_center / (data.nx / xmax))
-        y_center = (dy.start + dy.stop - 1) / 2
-        y_sources.append(y_center / (data.ny / ymax))
-
-    for dy, dx in slices_sinks:
-        x_center = (dx.start + dx.stop - 1) / 2
-        x_sinks.append(x_center / (data.nx / xmax))
-        y_center = (dy.start + dy.stop - 1) / 2
-        y_sinks.append(y_center / (data.ny / ymax))
-
-    return x_sources, y_sources, x_sinks, y_sinks
 
 
 def show_poles(data: Field3dData):

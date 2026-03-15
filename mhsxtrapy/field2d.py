@@ -8,8 +8,6 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.io.fits import getdata
 from astropy.io.fits import open as astroopen
-from scipy.interpolate import griddata
-from sunpy.map.sources import AIAMap
 
 from mhsxtrapy.constants import (
     ARCSEC_TO_RADIANS,
@@ -18,6 +16,7 @@ from mhsxtrapy.constants import (
     PIXEL_SIZE_Z_DIRECTION_FITS,
     L,
 )
+from mhsxtrapy.prep import resize_aia
 from mhsxtrapy.types import FluxBalanceState, Instrument
 
 __all__ = [
@@ -470,24 +469,6 @@ def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
     """
     Jz = np.gradient(by, axis=1) - np.gradient(bx, axis=0)
     return np.sum(Jz * np.sign(bz)) / np.sum(np.fabs(bz))
-
-
-def resize_aia(data: Field2dData, aia_image: AIAMap) -> np.ndarray:
-    nx = aia_image.data.shape[1]  # type: ignore
-    ny = aia_image.data.shape[0]  # type: ignore
-
-    x = np.arange(nx) * (data.x[-1] - data.x[0]) / (nx - 1) - data.x[0]
-    y = np.arange(ny) * (data.y[-1] - data.y[0]) / (ny - 1) - data.y[0]
-
-    xv_fine, yv_fine = np.meshgrid(data.x, data.y)
-    xv, yv = np.meshgrid(x, y)
-
-    return griddata(
-        np.column_stack((yv.flatten(), xv.flatten())),
-        aia_image.data.flatten(),
-        np.column_stack((yv_fine.flatten(), xv_fine.flatten())),
-        method="cubic",
-    ).reshape(data.bz.shape)
 
 
 def maximal_a(field: Field2dData, alpha: float, b: float) -> float:

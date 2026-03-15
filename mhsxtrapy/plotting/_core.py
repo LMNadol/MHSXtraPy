@@ -4,6 +4,7 @@ from typing import Tuple
 
 import numpy as np
 from matplotlib import colormaps, colors, rc
+from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.types import FluxBalanceState
@@ -208,3 +209,52 @@ def _make_boxedges(data):
     boxedges[1, 2] = data.z[-1]
 
     return boxedges
+
+
+def find_center(data: Field3dData) -> Tuple:
+    """
+    Find centres of poles on photospheric magentogram.
+    """
+
+    _, xmax, _, ymax, _, _ = (
+        data.x[0],
+        data.x[-1],
+        data.y[0],
+        data.y[-1],
+        data.z[0],
+        data.z[-1],
+    )
+
+    neighborhood_size = data.nx / 1.0
+    threshold = 1.0
+
+    data_max = maximum_filter(data.bz, neighborhood_size)  # mode ='reflect'
+    maxima = data.bz == data_max
+    data_min = minimum_filter(data.bz, neighborhood_size)
+    minima = data.bz == data_min
+
+    diff = (data_max - data_min) > threshold
+    maxima[diff == 0] = 0
+    minima[diff == 0] = 0
+
+    labeled_sources, num_objects_sources = label(maxima)  # type: ignore
+    slices_sources = find_objects(labeled_sources)
+    x_sources, y_sources = [], []
+
+    labeled_sinks, num_objects_sinks = label(minima)  # type: ignore
+    slices_sinks = find_objects(labeled_sinks)
+    x_sinks, y_sinks = [], []
+
+    for dy, dx in slices_sources:
+        x_center = (dx.start + dx.stop - 1) / 2
+        x_sources.append(x_center / (data.nx / xmax))
+        y_center = (dy.start + dy.stop - 1) / 2
+        y_sources.append(y_center / (data.ny / ymax))
+
+    for dy, dx in slices_sinks:
+        x_center = (dx.start + dx.stop - 1) / 2
+        x_sinks.append(x_center / (data.nx / xmax))
+        y_center = (dy.start + dy.stop - 1) / 2
+        y_sinks.append(y_center / (data.ny / ymax))
+
+    return x_sources, y_sources, x_sinks, y_sinks

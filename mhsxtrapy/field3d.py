@@ -16,13 +16,6 @@ from mhsxtrapy.solutions import get_solution
 __all__ = [
     "Field3dData",
     "calculate_magfield",
-    "btemp_linear",
-    "bpressure_linear",
-    "bdensity_linear",
-    "fpressure_linear",
-    "fdensity_linear",
-    "j3d",
-    "lf3d",
 ]
 
 
@@ -426,7 +419,32 @@ class Field3dData:
             np.ndarray: 3D current density
         """
 
-        return j3d(self)
+        sol = get_solution(
+            self.solution,
+            a=self.a,
+            b=self.b,
+            z0=self.z0,
+            deltaz=self.deltaz,
+            kappa=self.kappa,
+        )
+
+        j = np.zeros_like(self.field)
+
+        j[:, :, :, 2] = self.alpha * self.field[:, :, :, 2] * 10**-4
+
+        f_matrix = np.zeros_like(self.grad_bz[:, :, :, 0])
+        f_matrix[:, :, :] = sol.f(self.z)
+
+        j[:, :, :, 1] = (
+            self.alpha * self.field[:, :, :, 1] * 10**-4
+            + f_matrix * self.grad_bz[:, :, :, 0] * 10**-4
+        )
+
+        j[:, :, :, 0] = (
+            self.alpha * self.field[:, :, :, 0] * 10**-4
+            - f_matrix * self.grad_bz[:, :, :, 1] * 10**-4
+        )
+        return j / MU0 * L
 
     @cached_property
     def lf3d(self) -> np.ndarray:
@@ -437,7 +455,24 @@ class Field3dData:
             np.ndarray: 3D Lorentz force
         """
 
-        return lf3d(self)
+        j = self.j3d
+
+        lf = np.zeros_like(self.field)
+
+        lf[:, :, :, 0] = (
+            j[:, :, :, 2] * self.field[:, :, :, 1] * 10**-4
+            - j[:, :, :, 1] * self.field[:, :, :, 2] * 10**-4
+        )
+        lf[:, :, :, 1] = (
+            j[:, :, :, 0] * self.field[:, :, :, 2] * 10**-4
+            - j[:, :, :, 2] * self.field[:, :, :, 0] * 10**-4
+        )
+        lf[:, :, :, 2] = (
+            j[:, :, :, 1] * self.field[:, :, :, 0] * 10**-4
+            - j[:, :, :, 0] * self.field[:, :, :, 1] * 10**-4
+        )
+
+        return lf
 
 
 def calculate_magfield(
@@ -495,258 +530,76 @@ def calculate_magfield(
     return data
 
 
-def btemp_linear(
-    field3d: Field3dData, heights: np.ndarray, temps: np.ndarray
-) -> np.ndarray:
-    """
-    Return background temperature by height in Kelvin using linear interpolation between
-    given temperatures (temps) at given heights (heights). temps and heights must be arrays
-    of the same length.
+# def j3d(field3d: Field3dData) -> np.ndarray:
+#     """
+#     Returns current density, calucated from magnetic field as j = (alpha B + curl(0,0,f(z)Bz))/ mu0.
+#     In A/m^2.
 
-    Args:
-        field3d (Field3dData): 3D magnetic field data
-        heights (np.ndarray): array of given heights at which interpolation takes place
-        temps (np.ndarray): array of given temperature between which is interpolated, same length as heights
+#     Args:
+#         field3d (Field3dData): magnetic field data
 
-    Raises:
-        ValueError: In case lengths of heights and temps do not match
+#     Raises:
+#         ValueError: In case solution and parameter choices do not match
 
-    Returns:
-        np.ndarray: 1D vertical background temperature profile
-    """
+#     Returns:
+#         np.ndarray: current density
+#     """
 
-    temp = np.zeros_like(field3d.z)
+#     sol = get_solution(
+#         field3d.solution,
+#         a=field3d.a,
+#         b=field3d.b,
+#         z0=field3d.z0,
+#         deltaz=field3d.deltaz,
+#         kappa=field3d.kappa,
+#     )
 
-    if len(heights) != len(temps):
-        raise ValueError("Number of heights and temperatures do not match")
+#     j = np.zeros_like(field3d.field)
 
-    h_indices = np.searchsorted(heights, field3d.z, side="right") - 1
-    h_indices = np.clip(h_indices, 0, len(heights) - 2)
+#     j[:, :, :, 2] = field3d.alpha * field3d.field[:, :, :, 2] * 10**-4
 
-    frac = (field3d.z - np.array(heights)[h_indices]) / (
-        np.array(heights)[h_indices + 1] - np.array(heights)[h_indices]
-    )
+#     f_matrix = np.zeros_like(field3d.grad_bz[:, :, :, 0])
+#     f_matrix[:, :, :] = sol.f(field3d.z)
 
-    temp = (
-        np.array(temps)[h_indices]
-        + (np.array(temps)[h_indices + 1] - np.array(temps)[h_indices]) * frac
-    )
-    return temp
+#     j[:, :, :, 1] = (
+#         field3d.alpha * field3d.field[:, :, :, 1] * 10**-4
+#         + f_matrix * field3d.grad_bz[:, :, :, 0] * 10**-4
+#     )
 
-
-def bpressure_linear(
-    field3d: Field3dData, heights: np.ndarray, temps: np.ndarray
-) -> np.ndarray:
-    """
-    Returns background pressure resulting from background temperature btemp_linear.
-    Gives background pressure height profile normalised to 1 on the photosphere.
-    Need to multiply by BETA0 / 2.0 to normalise to same scale as dpressure. Need to
-    then multiply additionally by (B0 * 10**-4) ** 2.0 / MU0 to get into kg/(s^2m).
-
-    Args:
-        field3d (Field3dData): 3D magnetic field data
-        heights (np.ndarray): array of given heights at which interpolation takes place
-        temps (np.ndarray): array of given temperature between which is interpolated, same length as heights
-
-    Raises:
-        ValueError: In case lengths of heights and temps do not match
-
-    Returns:
-        np.ndarray: 1D vertical background pressure profile
-    """
-
-    if len(heights) != len(temps):
-        raise ValueError("Number of heights and temperatures do not match")
-
-    temp = np.zeros_like(field3d.z)
-
-    T0 = temps[np.argmin(np.abs(np.array(heights) - field3d.z0))]
-
-    H = KB * T0 / (MBAR * G_SOLAR) / L
-
-    h_indices = np.searchsorted(heights, field3d.z, side="right") - 1
-    h_indices = np.clip(h_indices, 0, len(heights) - 2)
-
-    qj = (np.array(temps)[1:] - np.array(temps)[:-1]) / (
-        np.array(heights)[1:] - np.array(heights)[:-1]
-    )
-    expj = -T0 / (H * qj)
-    tempj = (np.abs(np.array(temps)[1:]) / np.array(temps)[:-1]) ** expj
-    sum_tempj = np.concatenate(([1.0], np.cumprod(tempj)))
-
-    pro_array = sum_tempj[h_indices]
-
-    q = (np.array(temps)[h_indices + 1] - np.array(temps)[h_indices]) / (
-        np.array(heights)[h_indices + 1] - np.array(heights)[h_indices]
-    )
-    tempz = (
-        abs(np.array(temps)[h_indices] + q * (field3d.z - np.array(heights)[h_indices]))
-        / np.array(temps)[h_indices]
-    ) ** (-T0 / (H * q))
-    temp = pro_array * tempz
-
-    return temp
+#     j[:, :, :, 0] = (
+#         field3d.alpha * field3d.field[:, :, :, 0] * 10**-4
+#         - f_matrix * field3d.grad_bz[:, :, :, 1] * 10**-4
+#     )
+#     return j / MU0 * L
 
 
-def bdensity_linear(
-    field3d: Field3dData, heights: np.ndarray, temps: np.ndarray
-) -> np.ndarray:
-    """
-    Returns background density resulting from background temperature btemp_linear. Gives background
-    density height profile normalised to 1 on the photosphere. Need to multiply by
-    BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE to normalise to same scale as ddensity. Need to then
-    multiply additionally by (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L) to get into kg/(m^3).
+# def lf3d(field3d: Field3dData) -> np.ndarray:
+#     """
+#     Returns Lorentz force calculated from j x B.
+#     In kg/sm^2.
 
-    Args:
-        field3d (Field3dData): 3D magnetic field data
-        heights (np.ndarray): array of given heights at which interpolation takes place
-        temps (np.ndarray): array of given temperature between which is interpolated, same length as heights
+#     Args:
+#         field3d (Field3dData): magnetic field data
 
-    Raises:
-        ValueError: In case lengths of heights and temps do not match
+#     Returns:
+#         np.ndarray: 3D Lorentz force
+#     """
 
-    Returns:
-        np.ndarray: 1D vertical background density profile
-    """
+#     j = field3d.j3d
 
-    if len(heights) != len(temps):
-        raise ValueError("Number of heights and temperatures do not match")
+#     lf = np.zeros_like(field3d.field)
 
-    temp0 = temps[0]
-    dummypres = bpressure_linear(field3d, heights, temps)
-    dummytemp = btemp_linear(field3d, heights, temps)
+#     lf[:, :, :, 0] = (
+#         j[:, :, :, 2] * field3d.field[:, :, :, 1] * 10**-4
+#         - j[:, :, :, 1] * field3d.field[:, :, :, 2] * 10**-4
+#     )
+#     lf[:, :, :, 1] = (
+#         j[:, :, :, 0] * field3d.field[:, :, :, 2] * 10**-4
+#         - j[:, :, :, 2] * field3d.field[:, :, :, 0] * 10**-4
+#     )
+#     lf[:, :, :, 2] = (
+#         j[:, :, :, 1] * field3d.field[:, :, :, 0] * 10**-4
+#         - j[:, :, :, 0] * field3d.field[:, :, :, 1] * 10**-4
+#     )
 
-    return dummypres / dummytemp * temp0
-
-
-def fpressure_linear(
-    field3d: Field3dData, heights: np.ndarray, temps: np.ndarray
-) -> np.ndarray:
-    """
-    Returns full pressure in kg/(s^2m) described by equation (14) in Neukirch and Wiegelmann (2019)
-    from linear interpolated background temperature. Multiply by (B0 * 10**-4) ** 2.0 / MU0 to get
-    in normalised scale as dpressure.
-
-    Args:
-        field3d (Field3dData): 3D magnetic field data
-        heights (np.ndarray): array of given heights at which interpolation takes place
-        temps (np.ndarray): array of given temperature between which is interpolated, same length as heights
-
-    Returns:
-        np.ndarray: 3D full pressure, sum of background and variation
-    """
-
-    bp_matrix = np.zeros_like(field3d.dpressure)
-    bp_matrix[:, :, :] = bpressure_linear(field3d, heights, temps)
-
-    return (
-        (field3d.BETA0 / 2.0 * bp_matrix + field3d.dpressure)
-        * (field3d.B0 * 10**-4) ** 2.0
-        / MU0
-    )
-
-
-def fdensity_linear(
-    field3d: Field3dData, heights: np.ndarray, temps: np.ndarray
-) -> np.ndarray:
-    """
-    Returns full density in kg/(m^3) described by equation (15) in Neukirch and Wiegelmann (2019)
-    resulting from linearly interpolated background temperature. Divide by
-    (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L) to get in normalised scale as ddensity.
-
-    Args:
-        field3d (Field3dData): 3D magnetic field data
-        heights (np.ndarray): array of given heights at which interpolation takes place
-        temps (np.ndarray): array of given temperature between which is interpolated, same length as heights
-
-    Returns:
-        np.ndarray: 3D full density, sum of background and variation
-    """
-
-    T0 = temps[np.argmin(np.abs(np.array(heights) - field3d.z0))]
-
-    H = KB * T0 / (MBAR * G_SOLAR) / L
-
-    bd_matrix = np.zeros_like(field3d.ddensity)
-    bd_matrix[:, :, :] = bdensity_linear(field3d, heights, temps)
-
-    return (
-        (field3d.BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bd_matrix + field3d.ddensity)
-        * (field3d.B0 * 10**-4) ** 2.0
-        / (MU0 * G_SOLAR * L)
-    )
-
-
-def j3d(field3d: Field3dData) -> np.ndarray:
-    """
-    Returns current density, calucated from magnetic field as j = (alpha B + curl(0,0,f(z)Bz))/ mu0.
-    In A/m^2.
-
-    Args:
-        field3d (Field3dData): magnetic field data
-
-    Raises:
-        ValueError: In case solution and parameter choices do not match
-
-    Returns:
-        np.ndarray: current density
-    """
-
-    sol = get_solution(
-        field3d.solution,
-        a=field3d.a,
-        b=field3d.b,
-        z0=field3d.z0,
-        deltaz=field3d.deltaz,
-        kappa=field3d.kappa,
-    )
-
-    j = np.zeros_like(field3d.field)
-
-    j[:, :, :, 2] = field3d.alpha * field3d.field[:, :, :, 2] * 10**-4
-
-    f_matrix = np.zeros_like(field3d.grad_bz[:, :, :, 0])
-    f_matrix[:, :, :] = sol.f(field3d.z)
-
-    j[:, :, :, 1] = (
-        field3d.alpha * field3d.field[:, :, :, 1] * 10**-4
-        + f_matrix * field3d.grad_bz[:, :, :, 0] * 10**-4
-    )
-
-    j[:, :, :, 0] = (
-        field3d.alpha * field3d.field[:, :, :, 0] * 10**-4
-        - f_matrix * field3d.grad_bz[:, :, :, 1] * 10**-4
-    )
-    return j / MU0 * L
-
-
-def lf3d(field3d: Field3dData) -> np.ndarray:
-    """
-    Returns Lorentz force calculated from j x B.
-    In kg/sm^2.
-
-    Args:
-        field3d (Field3dData): magnetic field data
-
-    Returns:
-        np.ndarray: 3D Lorentz force
-    """
-
-    j = field3d.j3d
-
-    lf = np.zeros_like(field3d.field)
-
-    lf[:, :, :, 0] = (
-        j[:, :, :, 2] * field3d.field[:, :, :, 1] * 10**-4
-        - j[:, :, :, 1] * field3d.field[:, :, :, 2] * 10**-4
-    )
-    lf[:, :, :, 1] = (
-        j[:, :, :, 0] * field3d.field[:, :, :, 2] * 10**-4
-        - j[:, :, :, 2] * field3d.field[:, :, :, 0] * 10**-4
-    )
-    lf[:, :, :, 2] = (
-        j[:, :, :, 1] * field3d.field[:, :, :, 0] * 10**-4
-        - j[:, :, :, 0] * field3d.field[:, :, :, 1] * 10**-4
-    )
-
-    return lf
+#     return lf
