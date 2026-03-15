@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from typing import Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import colormaps, colors
+from matplotlib import colormaps, colors, rc
 
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.types import FluxBalanceState
 
-plt.rcParams["text.usetex"] = False
+rc("text", usetex=False)
 
 __all__ = [
     "cmap_magneto",

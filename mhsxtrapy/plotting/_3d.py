@@ -23,8 +23,8 @@ from ._core import (
 )
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
-rc("text", usetex=True)
-plt.rcParams["text.usetex"] = False
+rc("text", usetex=False)
+
 
 __all__ = ["plot_magnetogram_3D", "plot_fieldlines_grid", "plot_fieldlines_AR"]
 
@@ -73,7 +73,7 @@ def plot_magnetogram_3D(
         y_grid = y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx]
 
     fig = plt.figure()
-    ax = fig.figure.add_subplot(111, projection="3d")
+    ax = fig.add_subplot(111, projection="3d")
 
     if boundary == "EUV":
         ax.contourf(

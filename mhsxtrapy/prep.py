@@ -6,8 +6,10 @@ import numpy as np
 import sunpy.map
 from astropy.coordinates import SkyCoord
 from astropy.io.fits import getdata
-from matplotlib import colors, rc, ticker
+from matplotlib import rc, ticker
 from matplotlib.patches import ConnectionPatch, Rectangle
+
+from mhsxtrapy.plotting._core import cmap_magneto, norm_hmi
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=True)
@@ -15,16 +17,6 @@ rc("text", usetex=True)
 c1 = (1.000, 0.224, 0.376)
 c2 = (0.420, 0.502, 1.000)
 c4 = (1.000, 0.224, 0.376)
-
-cmap_magneto = colors.LinearSegmentedColormap.from_list(
-    "cmap_magneto",
-    (
-        # Edit this gradient at https://eltos.github.io/gradient/#magnetogram=2D2D2D-D3D3D3
-        (0.000, (0.176, 0.176, 0.176)),
-        (1.000, (1.000, 1.000, 1.000)),
-    ),
-)
-norm = colors.SymLogNorm(50, vmin=-7.5e2, vmax=7.5e2)
 
 __all__ = ["find_corners_SDO", "find_corners_SolarOrbiter"]
 
@@ -36,7 +28,7 @@ def find_corners_SDO(
     ulat: float,
     llat: float,
     cmap=cmap_magneto,
-    norm=norm,
+    norm=norm_hmi,
 ) -> None:
     """
     Plots SDO magnetogram and cut-out region defined through ulon, llon, ulat and llat.
@@ -69,7 +61,7 @@ def find_corners_SDO(
     magnetogram_big.plot(  # type: ignore
         axes=ax1,
         cmap=cmap,
-        norm=norm,
+        norm=norm_hmi,
         annotate=False,
     )
     magnetogram_big.draw_grid(axes=ax1, color="white", alpha=0.25, lw=0.5)  # type: ignore
@@ -86,7 +78,7 @@ def find_corners_SDO(
     ax2 = fig.add_subplot(122, projection=magnetogram_small)
     im = magnetogram_small.plot(
         axes=ax2,
-        norm=norm,
+        norm=norm_hmi,
         cmap=cmap,
         annotate=False,
     )
@@ -171,7 +163,7 @@ def find_corners_SolarOrbiter(
 
     fig = plt.figure()
     ax = fig.add_subplot(121)
-    ax.contourf(x, y, bz, 1000, cmap=cmap_magneto, norm=norm)
+    ax.contourf(x, y, bz, 1000, cmap=cmap_magneto, norm=norm_hmi)
     ax.set_xlabel(r"$x_i$")
     ax.set_ylabel(r"$y_i$")
     ax.set_box_aspect(bz.shape[0] / bz.shape[1])  # type: ignore

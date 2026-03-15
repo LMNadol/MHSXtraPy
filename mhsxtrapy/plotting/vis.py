@@ -20,8 +20,8 @@ from ._pp import plot_ddensity_xy as plot_dd
 from ._pp import plot_dpressure_xy as plot_dp
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
-rc("text", usetex=True)
-plt.rcParams["text.usetex"] = False
+rc("text", usetex=False)
+
 
 __all__ = [
     "plot_magnetogram_2D",
@@ -46,7 +46,7 @@ def plot_magnetogram_2D(data: Field2dData) -> None:
     """
 
     fig = plt.figure()
-    ax = fig.figure.add_subplot(111)  # type: ignore
+    ax = fig.add_subplot(111)  # type: ignore
     x_grid, y_grid = np.meshgrid(data.x, data.y)
     C = ax.contourf(
         x_grid,

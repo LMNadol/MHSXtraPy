@@ -1,4 +1,4 @@
-# Solar Atmosphere constants
+from __future__ import annotations
 
 __all__ = [
     "T_PHOTOSPHERE",

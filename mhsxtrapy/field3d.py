@@ -92,6 +92,13 @@ class Field3dData:
 
     EUV: np.ndarray | None = None
 
+    def __post_init__(self):
+        # Workaround for Python 3.14: @dataclass may not call __set_name__
+        # on cached_property descriptors, leaving attrname as None.
+        for name, value in type(self).__dict__.items():
+            if isinstance(value, cached_property) and value.attrname is None:
+                value.__set_name__(type(self), name)
+
     def __repr__(self) -> str:
         extras = []
         if self.b is not None:
@@ -136,6 +143,22 @@ class Field3dData:
             with open("/".join((path, file_name)), "rb") as f:
                 my_model[name] = pickle.load(f)
         return cls(**my_model)
+
+    @cached_property
+    def B0(self):
+        return self.field[
+            :, :, 0, 2
+        ].max()  # Gauss background magnetic field strength in 10^-4 kg/(s^2A) = 10^-4 T
+
+    @cached_property
+    def PB0(self):
+        return (self.B0 * 10**-4) ** 2 / (
+            2 * MU0
+        )  # magnetic pressure b0**2 / 2mu0 in kg/(s^2m)
+
+    @cached_property
+    def BETA0(self):
+        return P0 / self.PB0  # Plasma Beta, ration plasma to magnetic pressure
 
     @cached_property
     def btemp(self) -> np.ndarray:
@@ -264,9 +287,7 @@ class Field3dData:
         z_matrix = np.zeros_like(bz_matrix)
         z_matrix[:, :, :] = self.z
 
-        B0 = self.field[:, :, 0, 2].max()  # in Gauss
-
-        return -sol.f(z_matrix) / 2.0 * bz_matrix**2.0 / B0**2.0
+        return -sol.f(z_matrix) / 2.0 * bz_matrix**2.0 / self.B0**2.0
 
     @cached_property
     def ddensity(self) -> np.ndarray:
@@ -316,11 +337,9 @@ class Field3dData:
         z_matrix = np.zeros_like(bz_matrix)
         z_matrix[:, :, :] = self.z
 
-        B0 = self.field[:, :, 0, 2].max()  # in Gauss
-
         return (
-            sol.dfdz(z_matrix) / 2.0 * bz_matrix**2 / B0**2
-            + sol.f(z_matrix) * bdotbz_matrix / B0**2
+            sol.dfdz(z_matrix) / 2.0 * bz_matrix**2 / self.B0**2
+            + sol.f(z_matrix) * bdotbz_matrix / self.B0**2
         )
 
     @cached_property
@@ -336,15 +355,9 @@ class Field3dData:
         bp_matrix = np.zeros_like(self.dpressure)
         bp_matrix[:, :, :] = self.bpressure
 
-        B0 = self.field[
-            :, :, 0, 2
-        ].max()  # Gauss background magnetic field strength in 10^-4 kg/(s^2A) = 10^-4 T
-        PB0 = (B0 * 10**-4) ** 2 / (
-            2 * MU0
-        )  # magnetic pressure b0**2 / 2mu0 in kg/(s^2m)
-        BETA0 = P0 / PB0  # Plasma Beta, ration plasma to magnetic pressure
-
-        return BETA0 / 2.0 * bp_matrix + self.dpressure  # * (B0 * 10**-4) ** 2.0 / MU0
+        return (
+            self.BETA0 / 2.0 * bp_matrix + self.dpressure
+        )  # * (B0 * 10**-4) ** 2.0 / MU0
 
     @cached_property
     def fdensity(self) -> np.ndarray:
@@ -363,19 +376,12 @@ class Field3dData:
             1.0 + np.tanh(self.z0 / self.deltaz)
         )
         H = KB * T0 / (MBAR * G_SOLAR) / L
-        B0 = self.field[
-            :, :, 0, 2
-        ].max()  # Gauss background magnetic field strength in 10^-4 kg/(s^2A) = 10^-4 T
-        PB0 = (B0 * 10**-4) ** 2 / (
-            2 * MU0
-        )  # magnetic pressure b0**2 / 2mu0 in kg/(s^2m)
-        BETA0 = P0 / PB0  # Plasma Beta, ration plasma to magnetic pressure
 
         bd_matrix = np.zeros_like(self.ddensity)
         bd_matrix[:, :, :] = self.bdensity
 
         return (
-            BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bd_matrix + self.ddensity
+            self.BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bd_matrix + self.ddensity
         )  #  *(B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L)
 
     @cached_property
@@ -481,18 +487,17 @@ def btemp_linear(
     if len(heights) != len(temps):
         raise ValueError("Number of heights and temperatures do not match")
 
-    for iz, z in enumerate(field3d.z):
+    h_indices = np.searchsorted(heights, field3d.z, side="right") - 1
+    h_indices = np.clip(h_indices, 0, len(heights) - 2)
 
-        h_index = 0
+    frac = (field3d.z - np.array(heights)[h_indices]) / (
+        np.array(heights)[h_indices + 1] - np.array(heights)[h_indices]
+    )
 
-        for i in range(0, len(heights) - 1):
-            if z >= heights[i] and z <= heights[i + 1]:
-                h_index = i
-
-        temp[iz] = temps[h_index] + (temps[h_index + 1] - temps[h_index]) / (
-            heights[h_index + 1] - heights[h_index]
-        ) * (z - heights[h_index])
-
+    temp = (
+        np.array(temps)[h_indices]
+        + (np.array(temps)[h_indices + 1] - np.array(temps)[h_indices]) * frac
+    )
     return temp
 
 
@@ -520,41 +525,32 @@ def bpressure_linear(
     if len(heights) != len(temps):
         raise ValueError("Number of heights and temperatures do not match")
 
-    T0 = 0
-
     temp = np.zeros_like(field3d.z)
 
-    for iheight, height in enumerate(heights):
-        if height == field3d.z0:
-            T0 = temps[iheight]
+    T0 = temps[np.argmin(np.abs(np.array(heights) - field3d.z0))]
 
     H = KB * T0 / (MBAR * G_SOLAR) / L
 
-    for iz, z in enumerate(field3d.z):
+    h_indices = np.searchsorted(heights, field3d.z, side="right") - 1
+    h_indices = np.clip(h_indices, 0, len(heights) - 2)
 
-        h_index = 0
+    qj = (np.array(temps)[1:] - np.array(temps)[:-1]) / (
+        np.array(heights)[1:] - np.array(heights)[:-1]
+    )
+    expj = -T0 / (H * qj)
+    tempj = (np.abs(np.array(temps)[1:]) / np.array(temps)[:-1]) ** expj
+    sum_tempj = np.concatenate(([1.0], np.cumprod(tempj)))
 
-        for i in range(0, len(heights) - 1):
-            if heights[i] <= z <= heights[i + 1]:
-                h_index = i
+    pro_array = sum_tempj[h_indices]
 
-        pro = 1.0
-        for j in range(0, h_index):
-            qj = (temps[j + 1] - temps[j]) / (heights[j + 1] - heights[j])
-            expj = -T0 / (H * qj)
-            tempj = (
-                abs(temps[j] + qj * (heights[j + 1] - heights[j])) / temps[j]
-            ) ** expj
-            pro = pro * tempj
-
-        q = (temps[h_index + 1] - temps[h_index]) / (
-            heights[h_index + 1] - heights[h_index]
-        )
-        tempz = (abs(temps[h_index] + q * (z - heights[h_index])) / temps[h_index]) ** (
-            -T0 / (H * q)
-        )
-
-        temp[iz] = pro * tempz
+    q = (np.array(temps)[h_indices + 1] - np.array(temps)[h_indices]) / (
+        np.array(heights)[h_indices + 1] - np.array(heights)[h_indices]
+    )
+    tempz = (
+        abs(np.array(temps)[h_indices] + q * (field3d.z - np.array(heights)[h_indices]))
+        / np.array(temps)[h_indices]
+    ) ** (-T0 / (H * q))
+    temp = pro_array * tempz
 
     return temp
 
@@ -610,13 +606,11 @@ def fpressure_linear(
     bp_matrix = np.zeros_like(field3d.dpressure)
     bp_matrix[:, :, :] = bpressure_linear(field3d, heights, temps)
 
-    B0 = field3d.field[
-        :, :, 0, 2
-    ].max()  # Gauss background magnetic field strength in 10^-4 kg/(s^2A) = 10^-4 T
-    PB0 = (B0 * 10**-4) ** 2 / (2 * MU0)  # magnetic pressure b0**2 / 2mu0 in kg/(s^2m)
-    BETA0 = P0 / PB0  # Plasma Beta, ration plasma to magnetic pressure
-
-    return (BETA0 / 2.0 * bp_matrix + field3d.dpressure) * (B0 * 10**-4) ** 2.0 / MU0
+    return (
+        (field3d.BETA0 / 2.0 * bp_matrix + field3d.dpressure)
+        * (field3d.B0 * 10**-4) ** 2.0
+        / MU0
+    )
 
 
 def fdensity_linear(
@@ -636,25 +630,16 @@ def fdensity_linear(
         np.ndarray: 3D full density, sum of background and variation
     """
 
-    T0 = 0
-
-    for iheight, height in enumerate(heights):
-        if height == field3d.z0:
-            T0 = temps[iheight]
+    T0 = temps[np.argmin(np.abs(np.array(heights) - field3d.z0))]
 
     H = KB * T0 / (MBAR * G_SOLAR) / L
-    B0 = field3d.field[
-        :, :, 0, 2
-    ].max()  # Gauss background magnetic field strength in 10^-4 kg/(s^2A) = 10^-4 T
-    PB0 = (B0 * 10**-4) ** 2 / (2 * MU0)  # magnetic pressure b0**2 / 2mu0 in kg/(s^2m)
-    BETA0 = P0 / PB0  # Plasma Beta, ration plasma to magnetic pressure
 
     bd_matrix = np.zeros_like(field3d.ddensity)
     bd_matrix[:, :, :] = bdensity_linear(field3d, heights, temps)
 
     return (
-        (BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bd_matrix + field3d.ddensity)
-        * (B0 * 10**-4) ** 2.0
+        (field3d.BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bd_matrix + field3d.ddensity)
+        * (field3d.B0 * 10**-4) ** 2.0
         / (MU0 * G_SOLAR * L)
     )
 

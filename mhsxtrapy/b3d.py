@@ -237,7 +237,10 @@ def get_phi_dphi(
 
     sol = get_solution(solution, z0=z0, deltaz=deltaz, kappa=kappa)
 
-    if solution == WhichSolution.NANEU or solution == WhichSolution.NEUWIE:
+    if (
+        solution == WhichSolution.NADOL_NEUKIRCH
+        or solution == WhichSolution.NEUKIRCH_WIEGELMANN
+    ):
 
         for iz, z in enumerate(z_arr):
             phi_arr[:, :, iz] = sol.phi(z, p_arr, q_arr)
@@ -269,9 +272,11 @@ def compute_wavenumbers(nx, ny, px, py, nf, flux_balance_state, lxn, lyn) -> Tup
             f"Invalid flux_balance_state: {flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
         )
 
-    ones = 0.0 * np.arange(nf) + 1.0
+    # ones = 0.0 * np.arange(nf) + 1.0
+    # k2 = np.outer(ky**2, ones) + np.outer(ones, kx**2)
 
-    k2 = np.outer(ky**2, ones) + np.outer(ones, kx**2)
+    # ones = np.ones(nf)
+    k2 = ky[:, None] ** 2 + kx[None, :] ** 2
 
     return kx, ky, k2
 
@@ -347,7 +352,8 @@ def _compute_field_at_height(
     bfield_at_z = np.zeros((ny, nx, 3))
     dbz_at_z = np.zeros((ny, nx, 3))
 
-    ones = 0.0 * np.arange(nf) + 1.0
+    # ones = 0.0 * np.arange(nf) + 1.0
+    ones = np.ones(nf)
     ky_grid = np.outer(ky, ones)
     kx_grid = np.outer(ones, kx)
 
@@ -527,7 +533,10 @@ def b3d(
     trig_func = basis.trigfunc
     meta = basis.meta
 
-    if solution == WhichSolution.NEUWIE or solution == WhichSolution.NANEU:
+    if (
+        solution == WhichSolution.NEUKIRCH_WIEGELMANN
+        or solution == WhichSolution.NADOL_NEUKIRCH
+    ):
         assert z0 is not None and deltaz is not None and b is not None
         p = 0.5 * deltaz * np.sqrt(k2 * (1.0 - a - a * b) - alpha**2)
         q = 0.5 * deltaz * np.sqrt(k2 * (1.0 - a + a * b) - alpha**2)
