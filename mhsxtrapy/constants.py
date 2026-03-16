@@ -10,7 +10,6 @@ __all__ = [
     "P0",
     "MU0",
     "L",
-    "FLUX_BALANCE_THRESHOLD",
 ]
 
 

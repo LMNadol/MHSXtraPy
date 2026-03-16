@@ -12,18 +12,6 @@ from mhsxtrapy.types import FluxBalanceState
 
 rc("text", usetex=LATEX_ON)
 
-__all__ = [
-    "cmap_magneto",
-    "cmap_pressure",
-    "cmap_density",
-    "norm_aia",
-    "cmap_aia",
-    "norm_hmi",
-    "detect_footpoints",
-    "calculate_tick_count",
-    "set_axis_labels",
-]
-
 cmap_magneto = colors.LinearSegmentedColormap.from_list(
     "cmap_magneto",
     (

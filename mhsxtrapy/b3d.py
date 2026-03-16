@@ -10,19 +10,6 @@ from mhsxtrapy.field2d import Field2dData, FluxBalanceState
 from mhsxtrapy.solutions import get_solution
 from mhsxtrapy.types import WhichSolution
 
-__all__ = [
-    "FourierCoefficients",
-    "TrigBasis",
-    "FourierMeta",
-    "FourierBasis",
-    "MagneticField",
-    "seehafer",
-    "xnm",
-    "get_phi_dphi",
-    "compute_wavenumbers",
-    "b3d",
-]
-
 
 @dataclass
 class FourierCoefficients:
@@ -230,24 +217,9 @@ def get_phi_dphi(
 
     sol = get_solution(solution, z0=z0, deltaz=deltaz, kappa=kappa)
 
-    if (
-        solution == WhichSolution.NADOL_NEUKIRCH
-        or solution == WhichSolution.NEUKIRCH_WIEGELMANN
-    ):
-
-        for iz, z in enumerate(z_arr):
-            phi_arr[:, :, iz] = sol.phi(z, p_arr, q_arr)
-            dphidz_arr[:, :, iz] = sol.dphidz(z, p_arr, q_arr)
-
-    elif solution == WhichSolution.LOW:
-
-        for iy in range(0, int(nf)):
-            for ix in range(0, int(nf)):
-                q = q_arr[iy, ix]
-                p = p_arr[iy, ix]
-                for iz, z in enumerate(z_arr):
-                    phi_arr[iy, ix, iz] = sol.phi(z, p, q)
-                    dphidz_arr[iy, ix, iz] = sol.dphidz(z, p, q)
+    for iz, z in enumerate(z_arr):
+        phi_arr[:, :, iz] = sol.phi(z, p_arr, q_arr)
+        dphidz_arr[:, :, iz] = sol.dphidz(z, p_arr, q_arr)
 
     return phi_arr, dphidz_arr
 

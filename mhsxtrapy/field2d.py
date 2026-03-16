@@ -43,7 +43,12 @@ class Field2dData:
     bz          :   Bottom boundary magentogram of size (ny, nx,). Indexing of vectors done in this order,
                     such that, following intuition, x-direction corresponds to latitudinal extension and
                     y-direction to longitudinal extension of the magnetic field.
-
+    bx          :   Bottom boundary magentogram of size (ny, nx,). Indexing of vectors done in this order,
+                    such that, following intuition, x-direction corresponds to latitudinal extension and
+                    y-direction to longitudinal extension of the magnetic field. x-component.
+    by          :   Bottom boundary magentogram of size (ny, nx,). Indexing of vectors done in this order,
+                    such that, following intuition, x-direction corresponds to latitudinal extension and
+                    y-direction to longitudinal extension of the magnetic field. y-component.
     Returns:
         _type_: Field2dData object
     """
@@ -62,6 +67,8 @@ class Field2dData:
 
     flux_balance_state: FluxBalanceState
 
+    bx: np.ndarray | None = None
+    by: np.ndarray | None = None
     EUV: np.ndarray | None = None
 
     def __repr__(self) -> str:
@@ -453,7 +460,8 @@ def check_fluxbalance(bz: np.ndarray) -> bool:
     return np.fabs(np.sum(bz) / np.sum(np.fabs(bz))) < FLUX_BALANCE_THRESHOLD
 
 
-def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
+def alpha_HS04(field: Field2dData) -> float:
+    # def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
     """
     "Optimal" alpha calculated according to Hagino and Sakurai (2004).
     Alpha is calculated from the vertical electric current in the photosphere
@@ -467,8 +475,13 @@ def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
     Returns:
         float: alpha
     """
-    Jz = np.gradient(by, axis=1) - np.gradient(bx, axis=0)
-    return np.sum(Jz * np.sign(bz)) / np.sum(np.fabs(bz))
+    if field.bx is None or field.by is None:
+        raise ValueError(
+            "bx and by must be provided in Field2dData to calculate alpha_HS04."
+        )
+
+    Jz = np.gradient(field.by, axis=1) - np.gradient(field.bx, axis=0)
+    return np.sum(Jz * np.sign(field.bz)) / np.sum(np.fabs(field.bz))
 
 
 def maximal_a(field: Field2dData, alpha: float, b: float) -> float:

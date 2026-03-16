@@ -8,8 +8,6 @@ from numba import njit
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["fieldline3d"]
-
 
 ### DISCLAIMER: Written by Ben Williams. Taken from his MSAT package.
 ### Publication:

@@ -27,9 +27,6 @@ rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=LATEX_ON)
 
 
-__all__ = ["plot_magnetogram_3D", "plot_fieldlines_grid", "plot_fieldlines_AR"]
-
-
 def plot_magnetogram_3D(
     data: Field3dData,
     view: Literal["los", "side", "angular"],

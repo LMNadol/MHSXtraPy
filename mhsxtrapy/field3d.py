@@ -15,7 +15,6 @@ from mhsxtrapy.solutions import get_solution
 
 __all__ = [
     "Field3dData",
-    "calculate_magfield",
 ]
 
 

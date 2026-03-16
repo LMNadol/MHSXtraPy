@@ -14,8 +14,6 @@ from ._core import _get_coordinates, cmap_density, cmap_pressure
 
 rc("text", usetex=LATEX_ON)
 
-__all__ = ["plot_dpressure_xy", "plot_ddensity_xy"]
-
 
 def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
     """
