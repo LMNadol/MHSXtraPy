@@ -6,22 +6,25 @@ import numpy as np
 import sunpy.map
 from astropy.coordinates import SkyCoord
 from astropy.io.fits import getdata
-from matplotlib import rc, ticker
+from matplotlib import colors, rc, ticker
 from matplotlib.patches import ConnectionPatch, Rectangle
-from scipy.interpolate import griddata
-from sunpy.map.sources import AIAMap
 
-from mhsxtrapy.field2d import Field2dData
-from mhsxtrapy.plotting._core import cmap_magneto, norm_hmi
+from mhsxtrapy.constants import LATEX_ON
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
-rc("text", usetex=True)
-
-c1 = (1.000, 0.224, 0.376)
-c2 = (0.420, 0.502, 1.000)
-c4 = (1.000, 0.224, 0.376)
+rc("text", usetex=LATEX_ON)
 
 __all__ = ["find_corners_SDO", "find_corners_SolarOrbiter"]
+
+norm_hmi = colors.SymLogNorm(50, vmin=-7.5e2, vmax=7.5e2)
+cmap_magneto = colors.LinearSegmentedColormap.from_list(
+    "cmap_magneto",
+    (
+        # Edit this gradient at https://eltos.github.io/gradient/#magnetogram=2D2D2D-D3D3D3
+        (0.000, (0.176, 0.176, 0.176)),
+        (1.000, (1.000, 1.000, 1.000)),
+    ),
+)
 
 
 def find_corners_SDO(
@@ -188,21 +191,3 @@ def find_corners_SolarOrbiter(
     plt.tick_params(direction="in", length=2, width=0.5)
 
     plt.show()
-
-
-def resize_aia(data: Field2dData, aia_image: AIAMap) -> np.ndarray:
-    nx = aia_image.data.shape[1]  # type: ignore
-    ny = aia_image.data.shape[0]  # type: ignore
-
-    x = np.arange(nx) * (data.x[-1] - data.x[0]) / (nx - 1) - data.x[0]
-    y = np.arange(ny) * (data.y[-1] - data.y[0]) / (ny - 1) - data.y[0]
-
-    xv_fine, yv_fine = np.meshgrid(data.x, data.y)
-    xv, yv = np.meshgrid(x, y)
-
-    return griddata(
-        np.column_stack((yv.flatten(), xv.flatten())),
-        aia_image.data.flatten(),
-        np.column_stack((yv_fine.flatten(), xv_fine.flatten())),
-        method="cubic",
-    ).reshape(data.bz.shape)

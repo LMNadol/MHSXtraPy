@@ -9,7 +9,14 @@ import numpy as np
 from matplotlib import rc
 from scipy.interpolate import interp1d
 
-from mhsxtrapy.constants import DEFAULT_N_LINES, DEFAULT_PIXEL_STRIDE, G_SOLAR, MU0, L
+from mhsxtrapy.constants import (
+    DEFAULT_N_LINES,
+    DEFAULT_PIXEL_STRIDE,
+    G_SOLAR,
+    LATEX_ON,
+    MU0,
+    L,
+)
 from mhsxtrapy.field2d import Field2dData
 from mhsxtrapy.field3d import Field3dData
 
@@ -19,7 +26,7 @@ from ._pp import plot_ddensity_xy as plot_dd
 from ._pp import plot_dpressure_xy as plot_dp
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
-rc("text", usetex=False)
+rc("text", usetex=LATEX_ON)
 
 
 __all__ = [

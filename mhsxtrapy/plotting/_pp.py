@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
 
-from mhsxtrapy.constants import G_SOLAR, MU0, L
+from mhsxtrapy.constants import G_SOLAR, LATEX_ON, MU0, L
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.types import FluxBalanceState
 
 from ._core import _get_coordinates, cmap_density, cmap_pressure
 
-rc("text", usetex=False)
+rc("text", usetex=LATEX_ON)
 
 __all__ = ["plot_dpressure_xy", "plot_ddensity_xy"]
 

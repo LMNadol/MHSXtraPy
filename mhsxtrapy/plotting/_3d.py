@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
 
-from mhsxtrapy.constants import DEFAULT_N_LINES, DEFAULT_PIXEL_STRIDE
+from mhsxtrapy.constants import DEFAULT_N_LINES, DEFAULT_PIXEL_STRIDE, LATEX_ON
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.plotting.fieldline3d import fieldline3d
 from mhsxtrapy.types import FluxBalanceState
@@ -24,7 +24,7 @@ from ._core import (
 )
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
-rc("text", usetex=False)
+rc("text", usetex=LATEX_ON)
 
 
 __all__ = ["plot_magnetogram_3D", "plot_fieldlines_grid", "plot_fieldlines_AR"]

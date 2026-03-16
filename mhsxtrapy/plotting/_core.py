@@ -6,10 +6,11 @@ import numpy as np
 from matplotlib import colormaps, colors, rc
 from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
+from mhsxtrapy.constants import LATEX_ON
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.types import FluxBalanceState
 
-rc("text", usetex=False)
+rc("text", usetex=LATEX_ON)
 
 __all__ = [
     "cmap_magneto",
