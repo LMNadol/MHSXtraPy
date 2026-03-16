@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 
-__all__ = ["Solution"]
-
 
 class Solution(ABC):
 

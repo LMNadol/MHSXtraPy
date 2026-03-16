@@ -6,8 +6,6 @@ from numba import njit
 from .base import Solution
 from .neukirch_wiegelmann import dfdz_nw, f_nw
 
-__all__ = ["NaNeuSolution", "phi_nn", "dphidz_nn"]
-
 
 class NaNeuSolution(Solution):
 

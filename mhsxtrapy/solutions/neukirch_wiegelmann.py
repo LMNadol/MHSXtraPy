@@ -5,8 +5,6 @@ from scipy.special import hyp2f1
 
 from .base import Solution
 
-__all__ = ["NeuWieSolution", "phi_nw", "dphidz_nw", "f_nw", "dfdz_nw"]
-
 
 class NeuWieSolution(Solution):
 
