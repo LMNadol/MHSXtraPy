@@ -10,9 +10,11 @@ from mhsxtrapy.constants import G_SOLAR, LATEX_ON, MU0, L
 from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.types import FluxBalanceState
 
-from ._core import _get_coordinates, cmap_density, cmap_pressure
+from .utils import _get_coordinates, cmap_density, cmap_pressure
 
 rc("text", usetex=LATEX_ON)
+
+# TO DO `_pp.py` plotting functions unconditionally create `figures/` directories and save files. Make saving optional — return the figure and let callers decide. Add an optional `save_path` parameter.
 
 
 def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:

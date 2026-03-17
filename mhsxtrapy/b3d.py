@@ -131,6 +131,8 @@ def xnm(
 
     centre_x, centre_y = nx // 2, ny // 2
 
+    # TO DO can maybe be replaced with array slicing on `signal[centre_y ± iy_arr, centre_x ± ix_arr]` using `np.ix_`.
+
     for ix in range(nf):
         for iy in range(nf):
             anm[iy, ix] = (

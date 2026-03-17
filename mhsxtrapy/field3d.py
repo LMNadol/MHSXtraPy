@@ -17,6 +17,10 @@ __all__ = [
     "Field3dData",
 ]
 
+# TO DO The `field` array stores components as `[By, Bx, Bz]` (indices 0, 1, 2). This is non-standard and error-prone. Either:
+# - **(a)** Add named constants: `BY_IDX, BX_IDX, BZ_IDX = 0, 1, 2` and use throughout, or
+# - **(b)** Add an accessor: `field3d.bx`, `field3d.by`, `field3d.bz_3d` properties that slice the array.
+
 
 @dataclass
 class Field3dData:

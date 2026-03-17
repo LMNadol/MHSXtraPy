@@ -13,7 +13,7 @@ from mhsxtrapy.field3d import Field3dData
 from mhsxtrapy.plotting.fieldline3d import fieldline3d
 from mhsxtrapy.types import FluxBalanceState
 
-from ._core import (
+from .utils import (
     _get_coordinates,
     _make_boxedges,
     cmap_aia,

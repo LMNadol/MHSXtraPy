@@ -17,7 +17,7 @@ from mhsxtrapy.constants import G_SOLAR, LATEX_ON, MU0, L
 from mhsxtrapy.field2d import Field2dData
 from mhsxtrapy.field3d import Field3dData
 
-from ._core import cmap_magneto, detect_footpoints, find_center, norm_hmi
+from .utils import cmap_magneto, detect_footpoints, find_center, norm_hmi
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=LATEX_ON)
