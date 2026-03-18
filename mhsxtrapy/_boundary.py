@@ -11,7 +11,7 @@ from astropy.io.fits import open as astroopen
 from scipy.interpolate import griddata
 from sunpy.map.sources import AIAMap
 
-from mhsxtrapy.constants import (
+from mhsxtrapy._constants import (
     ARCSEC_TO_RADIANS,
     FLUX_BALANCE_THRESHOLD,
     NZ_Z_DIRECTION_FITS,

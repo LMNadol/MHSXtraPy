@@ -6,7 +6,7 @@ from typing import Tuple
 
 import numpy as np
 
-from mhsxtrapy.boundary import Field2dData, FluxBalanceState
+from mhsxtrapy._boundary import Field2dData, FluxBalanceState
 from mhsxtrapy.solutions import get_solution
 from mhsxtrapy.types import WhichSolution
 

@@ -14,8 +14,8 @@ from matplotlib import rc, ticker
 from matplotlib.patches import ConnectionPatch, Rectangle
 from scipy.interpolate import interp1d
 
-from mhsxtrapy.boundary import Field2dData
-from mhsxtrapy.constants import (
+from mhsxtrapy._boundary import Field2dData
+from mhsxtrapy._constants import (
     DEFAULT_N_LINES,
     DEFAULT_PIXEL_STRIDE,
     G_SOLAR,
@@ -23,7 +23,7 @@ from mhsxtrapy.constants import (
     MU0,
     L,
 )
-from mhsxtrapy.field import Field3dData
+from mhsxtrapy._field import Field3dData
 
 from ._3d import plot_magnetogram_3D as plot_3D
 from ._pp import plot_ddensity_xy as plot_dd

@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
 
-from mhsxtrapy.constants import DEFAULT_N_LINES, DEFAULT_PIXEL_STRIDE, LATEX_ON
-from mhsxtrapy.field import Field3dData
+from mhsxtrapy._constants import DEFAULT_N_LINES, DEFAULT_PIXEL_STRIDE, LATEX_ON
+from mhsxtrapy._field import Field3dData
 from mhsxtrapy.plotting._fieldline3d import fieldline3d
 from mhsxtrapy.types import FluxBalanceState
 

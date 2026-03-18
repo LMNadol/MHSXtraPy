@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from ._3d import plot_magnetogram_3D
-from ._pp import plot_ddensity_xy, plot_dpressure_xy
-from .plot import (
+from ._plot import (
     find_corners_SDO,
     find_corners_SolarOrbiter,
     plot_ddensity_z,
@@ -11,6 +10,7 @@ from .plot import (
     show_footpoints,
     show_poles,
 )
+from ._pp import plot_ddensity_xy, plot_dpressure_xy
 
 __all__: list[str] = [
     "plot_magnetogram_2D",
