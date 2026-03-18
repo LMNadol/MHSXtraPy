@@ -24,19 +24,11 @@ from mhsxtrapy.constants import (
 )
 from mhsxtrapy.field2d import Field2dData
 from mhsxtrapy.field3d import Field3dData
-from mhsxtrapy.types import FluxBalanceState
 
-from ._3d import plot_fieldlines_AR, plot_fieldlines_grid
-from .utils import (
-    _get_coordinates,
-    cmap_aia,
-    cmap_magneto,
-    detect_footpoints,
-    find_center,
-    norm_aia,
-    norm_hmi,
-    set_axis_labels,
-)
+from ._3d import plot_magnetogram_3D as plot_3D
+from ._pp import plot_ddensity_xy as plot_dd
+from ._pp import plot_dpressure_xy as plot_dp
+from .utils import cmap_magneto, detect_footpoints, find_center, norm_hmi
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=LATEX_ON)
@@ -92,151 +84,6 @@ def plot_magnetogram_2D(data: Field2dData) -> None:
 
     plotname = "figures/magnetogram-2D.png"
     plt.savefig(plotname, dpi=300, bbox_inches="tight", pad_inches=0.5)
-    plt.show()
-
-
-def plot_magnetogram_3D(
-    data: Field3dData,
-    view: Literal["los", "side", "angular"],
-    footpoints: Literal["all", "active-regions"],
-    boundary: Literal["FeI-6173", "EUV"] = "FeI-6173",
-    n_lines_x: int | None = DEFAULT_N_LINES,
-    n_lines_y: int | None = DEFAULT_N_LINES,
-    pixel_stride_x: int | None = DEFAULT_PIXEL_STRIDE,
-    pixel_stride_y: int | None = DEFAULT_PIXEL_STRIDE,
-):
-    """
-    Create figure of magnetic field line from Field3dData object. Specify angle of view and optional zoom
-    for the side view onto the transition region, which footpoints are chosen for field lines.
-
-    Args:
-        data (Field3dData): magnetic field data
-        view (Literal[&quot;los&quot;, &quot;side&quot;, &quot;angular&quot;]): which view should be displayed
-        footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
-
-    Raises:
-        ValueError: In case view value is wrong
-        ValueError: In case footpoints value is wrong
-    """
-
-    if boundary == "EUV":
-        if data.EUV is None:
-            raise ValueError("EUV selected as boundary, but no EUV image provided.")
-
-    xmin, xmax, ymin, ymax, zmin, zmax = (
-        data.x[0],
-        data.x[-1],
-        data.y[0],
-        data.y[-1],
-        data.z[0],
-        data.z[-1],
-    )
-
-    x, y, z = _get_coordinates(data)
-    x_grid, y_grid = np.meshgrid(x, y)
-
-    if data.flux_balance_state == FluxBalanceState.UNBALANCED:
-        x_grid = x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx]
-        y_grid = y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx]
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
-
-    if boundary == "EUV":
-        ax.contourf(
-            x_grid,
-            y_grid,
-            data.EUV,
-            1000,
-            cmap=cmap_aia,
-            norm=norm_aia,
-            offset=0.0,
-        )
-    else:
-        ax.contourf(
-            x_grid,
-            y_grid,
-            data.bz,
-            20,
-            cmap=cmap_magneto,
-            offset=0.0,
-        )
-
-    ax.set_xlabel(r"$x$ [Mm]", size=14)
-    ax.set_ylabel(r"$y$ [Mm]", size=14)
-    ax.set_zlabel(r"$z$ [Mm]", size=14)  # type: ignore
-    ax.grid(False)
-    ax.set_zlim(zmin, zmax)  # type: ignore
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(ymin, ymax)
-    ax.set_box_aspect((xmax, ymax, zmax))  # type: ignore
-
-    x_length = abs(xmax - xmin)
-    y_length = abs(ymax - ymin)
-    z_length = abs(zmax - zmin)
-    # max_length = max(x_length, y_length, z_length)
-
-    # Set axis labels with dynamic positioning
-    set_axis_labels(ax, x_length, y_length, z_length)
-
-    if footpoints == "all":
-        plot_fieldlines_grid(data, ax, n_lines_x, n_lines_y)
-    elif footpoints == "active-regions":
-        sinks, sources = detect_footpoints(data)
-        plot_fieldlines_AR(data, sinks, sources, ax, pixel_stride_x, pixel_stride_y)
-    else:
-        raise ValueError(
-            f"Invalid footpoints option: {footpoints}. Choose from 'all' or 'active-regions'."
-        )
-
-    if view == "los":
-        ax.view_init(90, -90)  # type: ignore
-        ax.set_zticklabels([])  # type: ignore
-        ax.set_zlabel("")  # type: ignore
-
-        [t.set_va("center") for t in ax.get_yticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_yticklabels()]  # type: ignore
-
-        [t.set_va("center") for t in ax.get_xticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_xticklabels()]  # type: ignore
-    elif view == "side":
-        ax.set_zticks(np.linspace(zmin, zmax, 5))
-        ax.view_init(0, -90)  # type: ignore
-        ax.set_yticklabels([])  # type: ignore
-        ax.set_ylabel("")
-
-        [t.set_va("top") for t in ax.get_xticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_xticklabels()]  # type: ignore
-
-        [t.set_va("top") for t in ax.get_zticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_zticklabels()]  # type: ignore
-
-    elif view == "angular":
-        ax.set_zticks(np.linspace(zmin, zmax, 5))
-        ax.view_init(30, 240, 0)  # type: ignore
-
-        [t.set_va("bottom") for t in ax.get_yticklabels()]  # type: ignore
-        [t.set_ha("right") for t in ax.get_yticklabels()]  # type: ignore
-
-        [t.set_va("bottom") for t in ax.get_xticklabels()]  # type: ignore
-        [t.set_ha("left") for t in ax.get_xticklabels()]  # type: ignore
-
-        [t.set_va("top") for t in ax.get_zticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_zticklabels()]  # type: ignore
-    else:
-        raise ValueError(
-            f"Invalid view option: {view}. Choose from 'los', 'side', or 'angular'."
-        )
-
-    # Ensure the 'figures' directory exists
-    if not os.path.exists("figures"):
-        os.makedirs("figures")
-    # plt.colorbar(C)
-    # Construct the path using the view variable
-    path = f"figures/magnetogram-3D_{view}.png"
-
-    plt.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.4)
-
     plt.show()
 
 
@@ -355,59 +202,59 @@ def plot_ddensity_z(data: Field3dData) -> None:
     plt.show()
 
 
-# def plot_magnetogram_3D(
-#     data: Field3dData,
-#     view: Literal["los", "side", "angular"],
-#     footpoints: Literal["all", "active-regions"],
-#     boundary: Literal["FeI-6173", "EUV"] = "FeI-6173",
-#     n_lines_x: int | None = DEFAULT_N_LINES,
-#     n_lines_y: int | None = DEFAULT_N_LINES,
-#     pixel_stride_x: int | None = DEFAULT_PIXEL_STRIDE,
-#     pixel_stride_y: int | None = DEFAULT_PIXEL_STRIDE,
-# ):
-#     """
-#     Wrapper function for 3D magentic field plotting.
+def plot_magnetogram_3D(
+    data: Field3dData,
+    view: Literal["los", "side", "angular"],
+    footpoints: Literal["all", "active-regions"],
+    boundary: Literal["FeI-6173", "EUV"] = "FeI-6173",
+    n_lines_x: int | None = DEFAULT_N_LINES,
+    n_lines_y: int | None = DEFAULT_N_LINES,
+    pixel_stride_x: int | None = DEFAULT_PIXEL_STRIDE,
+    pixel_stride_y: int | None = DEFAULT_PIXEL_STRIDE,
+):
+    """
+    Wrapper function for 3D magentic field plotting.
 
-#         Args:
-#         data (Field3dData): magnetic field data
-#         view (Literal[&quot;los&quot;, &quot;side&quot;, &quot;angular&quot;]): which view should be displayed
-#         footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
-#     """
+        Args:
+        data (Field3dData): magnetic field data
+        view (Literal[&quot;los&quot;, &quot;side&quot;, &quot;angular&quot;]): which view should be displayed
+        footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
+    """
 
-#     plot_3D(
-#         data,
-#         view,
-#         footpoints,
-#         boundary,
-#         n_lines_x,
-#         n_lines_y,
-#         pixel_stride_x,
-#         pixel_stride_y,
-#     )
-
-
-# def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
-#     """
-#     Wrapper function for 2D pressure variation plotting.
-
-#     Args:
-#         data (Field3dData): magnetic field data
-#         z (np.float64): height z at which variation is plotted
-#     """
-
-#     plot_dp(data, z)
+    plot_3D(
+        data,
+        view,
+        footpoints,
+        boundary,
+        n_lines_x,
+        n_lines_y,
+        pixel_stride_x,
+        pixel_stride_y,
+    )
 
 
-# def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
-#     """
-#     Wrapper function for 2D density variation plotting.
+def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
+    """
+    Wrapper function for 2D pressure variation plotting.
 
-#     Args:
-#         data (Field3dData): magnetic field data
-#         z (np.float64): height z at which variation is plotted
-#     """
+    Args:
+        data (Field3dData): magnetic field data
+        z (np.float64): height z at which variation is plotted
+    """
 
-#     plot_dd(data, z)
+    plot_dp(data, z)
+
+
+def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
+    """
+    Wrapper function for 2D density variation plotting.
+
+    Args:
+        data (Field3dData): magnetic field data
+        z (np.float64): height z at which variation is plotted
+    """
+
+    plot_dd(data, z)
 
 
 def show_poles(data: Field3dData):
