@@ -487,7 +487,7 @@ def alpha_HS04(field: Field2dData) -> float:
 
 
 def maximal_a(field: Field2dData, alpha: float, b: float) -> float:
-    from mhsxtrapy.b3d import compute_wavenumbers
+    from mhsxtrapy.extrapolation import compute_wavenumbers
 
     if field.flux_balance_state == FluxBalanceState.BALANCED:
         lengthscale = 1.0
