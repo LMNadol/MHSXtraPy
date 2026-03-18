@@ -4,9 +4,9 @@ from functools import lru_cache
 
 from mhsxtrapy.types import WhichSolution
 
-from .low import LowSolution
-from .nadol_neukirch import NaNeuSolution
-from .neukirch_wiegelmann import NeuWieSolution
+from ._low import LowSolution
+from ._nadol_neukirch import NaNeuSolution
+from ._neukirch_wiegelmann import NeuWieSolution
 
 __all__ = []
 

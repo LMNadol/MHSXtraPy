@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from mhsxtrapy.constants import G_SOLAR, KB, MBAR, MU0, T_PHOTOSPHERE, L
-from mhsxtrapy.field3d import Field3dData
+from mhsxtrapy.field import Field3dData
 
 
 def btemp_linear(

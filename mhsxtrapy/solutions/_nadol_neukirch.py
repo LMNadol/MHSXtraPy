@@ -3,8 +3,8 @@ from __future__ import annotations
 import numpy as np
 from numba import njit
 
-from .base import Solution
-from .neukirch_wiegelmann import dfdz_nw, f_nw
+from ._base import Solution
+from ._neukirch_wiegelmann import dfdz_nw, f_nw
 
 
 class NaNeuSolution(Solution):

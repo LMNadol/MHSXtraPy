@@ -14,6 +14,7 @@ from matplotlib import rc, ticker
 from matplotlib.patches import ConnectionPatch, Rectangle
 from scipy.interpolate import interp1d
 
+from mhsxtrapy.boundary import Field2dData
 from mhsxtrapy.constants import (
     DEFAULT_N_LINES,
     DEFAULT_PIXEL_STRIDE,
@@ -22,13 +23,12 @@ from mhsxtrapy.constants import (
     MU0,
     L,
 )
-from mhsxtrapy.field2d import Field2dData
-from mhsxtrapy.field3d import Field3dData
+from mhsxtrapy.field import Field3dData
 
 from ._3d import plot_magnetogram_3D as plot_3D
 from ._pp import plot_ddensity_xy as plot_dd
 from ._pp import plot_dpressure_xy as plot_dp
-from .utils import cmap_magneto, detect_footpoints, find_center, norm_hmi
+from ._utils import cmap_magneto, detect_footpoints, find_center, norm_hmi
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=LATEX_ON)

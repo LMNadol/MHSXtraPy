@@ -7,7 +7,7 @@ from matplotlib import colormaps, colors, rc
 from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
 from mhsxtrapy.constants import LATEX_ON
-from mhsxtrapy.field3d import Field3dData
+from mhsxtrapy.field import Field3dData
 from mhsxtrapy.types import FluxBalanceState
 
 rc("text", usetex=LATEX_ON)

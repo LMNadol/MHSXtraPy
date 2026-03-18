@@ -8,9 +8,9 @@ from functools import cached_property
 import h5py
 import numpy as np
 
+from mhsxtrapy._extrapolation import WhichSolution, b3d
+from mhsxtrapy.boundary import Field2dData, FluxBalanceState
 from mhsxtrapy.constants import G_SOLAR, KB, MBAR, MU0, P0, T_CORONA, T_PHOTOSPHERE, L
-from mhsxtrapy.extrapolation import WhichSolution, b3d
-from mhsxtrapy.field2d import Field2dData, FluxBalanceState
 from mhsxtrapy.solutions import get_solution
 
 __all__ = [

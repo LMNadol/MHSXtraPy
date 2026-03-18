@@ -9,11 +9,11 @@ import numpy as np
 from matplotlib import rc
 
 from mhsxtrapy.constants import DEFAULT_N_LINES, DEFAULT_PIXEL_STRIDE, LATEX_ON
-from mhsxtrapy.field3d import Field3dData
-from mhsxtrapy.plotting.fieldline3d import fieldline3d
+from mhsxtrapy.field import Field3dData
+from mhsxtrapy.plotting._fieldline3d import fieldline3d
 from mhsxtrapy.types import FluxBalanceState
 
-from .utils import (
+from ._utils import (
     _get_coordinates,
     _make_boxedges,
     cmap_aia,

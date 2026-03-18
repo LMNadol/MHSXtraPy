@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 from scipy.special import jv
 
-from .base import Solution
+from ._base import Solution
 
 
 class LowSolution(Solution):

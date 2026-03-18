@@ -7,10 +7,10 @@ import numpy as np
 from matplotlib import rc
 
 from mhsxtrapy.constants import G_SOLAR, LATEX_ON, MU0, L
-from mhsxtrapy.field3d import Field3dData
+from mhsxtrapy.field import Field3dData
 from mhsxtrapy.types import FluxBalanceState
 
-from .utils import _get_coordinates, cmap_density, cmap_pressure
+from ._utils import _get_coordinates, cmap_density, cmap_pressure
 
 rc("text", usetex=LATEX_ON)
 
