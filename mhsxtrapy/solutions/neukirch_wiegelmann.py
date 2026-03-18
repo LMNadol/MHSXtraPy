@@ -8,9 +8,7 @@ from .base import Solution
 
 class NeuWieSolution(Solution):
 
-    def __init__(
-        self, z0: float, deltaz: float, a: float | None = None, b: float | None = None
-    ):
+    def __init__(self, z0: float, deltaz: float, a: float, b: float):
         self.z0 = z0
         self.deltaz = deltaz
         self.a = a

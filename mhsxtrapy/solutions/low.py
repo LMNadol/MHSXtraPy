@@ -8,7 +8,7 @@ from .base import Solution
 
 class LowSolution(Solution):
 
-    def __init__(self, kappa: float, a: float | None = None):
+    def __init__(self, kappa: float, a: float):
         self.kappa = kappa
         self.a = a
 
