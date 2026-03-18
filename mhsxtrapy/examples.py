@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
+__all__ = ["dipole", "multipole"]
+
 
 def dipole(x: np.float64, y: np.float64) -> np.float64:
     """

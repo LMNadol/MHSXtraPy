@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
-from typing import Optional
 
 import numpy as np
 import sunpy.map
@@ -13,12 +11,23 @@ from astropy.io.fits import open as astroopen
 from scipy.interpolate import griddata
 from sunpy.map.sources import AIAMap
 
-# from mhsxtrapy.download import SHARPdata
+from mhsxtrapy.constants import (
+    ARCSEC_TO_RADIANS,
+    FLUX_BALANCE_THRESHOLD,
+    NZ_Z_DIRECTION_FITS,
+    PIXEL_SIZE_Z_DIRECTION_FITS,
+    L,
+)
+from mhsxtrapy.types import FluxBalanceState, Instrument
 
+__all__ = [
+    "Field2dData",
+    "check_fluxbalance",
+    "alpha_HS04",
+    "maximal_a",
+]
 
-class FluxBalanceState(Enum):
-    BALANCED = "Balanced"
-    UNBALANCED = "Unbalanced"
+# TO DO `px`, `py`, `pz` could be confused with momentum. `dx`, `dy`, `dz` is the standard convention for grid spacing in computational physics. Alternatively, `pixel_x`, `pixel_y`, `pixel_z`.
 
 
 @dataclass
@@ -36,7 +45,12 @@ class Field2dData:
     bz          :   Bottom boundary magentogram of size (ny, nx,). Indexing of vectors done in this order,
                     such that, following intuition, x-direction corresponds to latitudinal extension and
                     y-direction to longitudinal extension of the magnetic field.
-
+    bx          :   Bottom boundary magentogram of size (ny, nx,). Indexing of vectors done in this order,
+                    such that, following intuition, x-direction corresponds to latitudinal extension and
+                    y-direction to longitudinal extension of the magnetic field. x-component.
+    by          :   Bottom boundary magentogram of size (ny, nx,). Indexing of vectors done in this order,
+                    such that, following intuition, x-direction corresponds to latitudinal extension and
+                    y-direction to longitudinal extension of the magnetic field. y-component.
     Returns:
         _type_: Field2dData object
     """
@@ -55,251 +69,117 @@ class Field2dData:
 
     flux_balance_state: FluxBalanceState
 
+    bx: np.ndarray | None = None
+    by: np.ndarray | None = None
     EUV: np.ndarray | None = None
 
-    # @classmethod
-    # def from_SHARP_object(cls, sharpdata: SHARPdata):
-
-    #     nf = min(sharpdata.nx, sharpdata.ny)
-
-    #     zmax = 20.0
-    #     zmin = 0.0
-    #     # pz = np.float64(90.0 * 10**-3)
-    #     pz = max(sharpdata.px, sharpdata.py)
-
-    #     nz = int(np.floor(zmax / pz))
-
-    #     z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
-
-    #     if np.fabs(check_fluxbalance(sharpdata.bz)) < 0.01:
-    #         return Field2dData(
-    #             sharpdata.nx,
-    #             sharpdata.ny,
-    #             nz,
-    #             nf,
-    #             sharpdata.px,
-    #             sharpdata.py,
-    #             pz,
-    #             sharpdata.x,
-    #             sharpdata.y,
-    #             z,
-    #             sharpdata.bz,
-    #             flux_balance_state=FluxBalanceState.BALANCED,
-    #         )
-    #     else:
-    #         return Field2dData(
-    #             sharpdata.nx,
-    #             sharpdata.ny,
-    #             nz,
-    #             nf,
-    #             sharpdata.px,
-    #             sharpdata.py,
-    #             pz,
-    #             sharpdata.x,
-    #             sharpdata.y,
-    #             z,
-    #             sharpdata.bz,
-    #             flux_balance_state=FluxBalanceState.UNBALANCED,
-    #         )
+    def __repr__(self) -> str:
+        euv_info = f", EUV={self.EUV.shape}" if self.EUV is not None else ""
+        return (
+            f"Field2dData(nx={self.nx}, ny={self.ny}, nz={self.nz}, nf={self.nf}, "
+            f"px={self.px}, py={self.py}, pz={self.pz}, "
+            f"bz={self.bz.shape}, flux_balance={self.flux_balance_state.value}{euv_info})"
+        )
 
     @classmethod
-    def from_fits_SolarOrbiter(
-        cls, path: str, stx: int, lstx: int, sty: int, lsty: int
-    ):
-        """
-        Creates dataclass of type Field2dData from SolarOrbiter Archive data in .fits format.
-        Only needs to be handed path to file and the indices one wants to use to cut the region to size,
-        then creates Field2dData for extrapolation to 20 Mm.
+    def from_array(cls, bz, pixel_size, nz, pz):
 
-        Steps:
-        (1)     From the file given at path read in the image and header data refarding the distance to
-                the sun, pixel unit and pixel size in arcsec.
-        (2)     Cut image to specific size [sty:lsty, stx:lstx] around feature under investigation.
-        (3)     Determine nx, ny, nf, px, py, xmax, ymax from data.
-        (4)     Choose nz, pz and zmax.
-        (5)     Determine x, y, z.
-        (6)     Write all into Field2dData object.
-
-        Args:
-            path (str): path to .fits file
-            stx (int): start index x-direction
-            lstx (int): last index x-direction
-            sty (int): start index y-direction
-            lsty (int): last index y-direction
-
-        Returns:
-            _type_: Field2dData object
-        """
-
-        with astroopen(path) as data:  # type: ignore
-
-            image = getdata(path, ext=False)
-
-            hdr = data[0].header  # type: ignore
-            dist = hdr["DSUN_OBS"]
-            px_unit = hdr["CUNIT1"]
-            py_unit = hdr["CUNIT2"]
-            px_arcsec = hdr["CDELT1"]
-            py_arcsec = hdr["CDELT2"]
-
-        image_cut = image[sty:lsty, stx:lstx]  # type: ignore
-
-        nx = image_cut.shape[1]
-        ny = image_cut.shape[0]
+        nx = bz.shape[1]
+        ny = bz.shape[0]
+        px = py = pixel_size
 
         nf = min(nx, ny)
 
-        px_radians = px_arcsec / 206265.0
-        py_radians = py_arcsec / 206265.0
+        # Use FFT-consistent grid: spacing = px = L/N (not linspace which gives L/(N-1))
+        x_arr = np.arange(nx, dtype=np.float64) * px
+        y_arr = np.arange(ny, dtype=np.float64) * py
+        z_arr = np.arange(nz, dtype=np.float64) * pz
 
-        dist_Mm = dist * 10**-6
-        px = px_radians * dist_Mm
-        py = py_radians * dist_Mm
-
-        xmin = 0.0
-        ymin = 0.0
-        zmin = 0.0
-
-        xmax = nx * px
-        ymax = ny * py
-        zmax = 20.0
-
-        # pz = np.float64(90.0 * 10**-3)
-        pz = max(px, py)
-
-        nz = 140  # int(np.floor(zmax / pz))
-        zmax = (nz - 1) * px
-        # x = np.arange(nx) * (xmax - xmin) / (nx - 1) - xmin
-        # y = np.arange(ny) * (ymax - ymin) / (ny - 1) - ymin
-        # z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
-        x = np.arange(nx, dtype=np.float64) * px
-        y = np.arange(ny, dtype=np.float64) * py
-        z = np.arange(nz, dtype=np.float64) * pz
-
-        if np.fabs(check_fluxbalance(image_cut)) < 0.01:
-            return Field2dData(
-                nx,
-                ny,
-                nz,
-                nf,
-                px,
-                py,
-                pz,
-                x,
-                y,
-                z,
-                image_cut,
-                flux_balance_state=FluxBalanceState.BALANCED,
-            )
+        if check_fluxbalance(bz):
+            fb_state = FluxBalanceState.BALANCED
         else:
-            return Field2dData(
-                nx,
-                ny,
-                nz,
-                nf,
-                px,
-                py,
-                pz,
-                x,
-                y,
-                z,
-                image_cut,
-                flux_balance_state=FluxBalanceState.UNBALANCED,
-            )
+            fb_state = FluxBalanceState.UNBALANCED
+
+        return Field2dData(
+            nx,
+            ny,
+            nz,
+            nf,
+            px,
+            py,
+            pz,
+            x_arr,
+            y_arr,
+            z_arr,
+            bz,
+            flux_balance_state=fb_state,
+        )
 
     @classmethod
-    def from_fits_SDO(
+    def from_fits(
         cls,
+        instrument: Instrument,
         path: str,
-        ulon: float,
-        llon: float,
-        ulat: float,
-        llat: float,
+        ulon: float | None = None,
+        llon: float | None = None,
+        ulat: float | None = None,
+        llat: float | None = None,
         path_aia: str | None = None,
+        stx: int | None = None,
+        lstx: int | None = None,
+        sty: int | None = None,
+        lsty: int | None = None,
     ):
-        """
-        Creates dataclass of type Field2dData from SDO HMI data in .fits format.
-        Only needs to be handed path to file and longitudes and latitutes of desired cut out,
-        then creates Field2dData for extrapolation to 20 Mm.
 
-        Steps:
-        (1)     From the file given at path read in the image and header data refarding the distance to
-                the sun, pixel unit and pixel size in arcsec.
-        (2)     Cut image to specific size round feature under investigation.
-        (3)     Determine nx, ny, nf, px, py, xmax, ymax from data.
-        (4)     Choose nz, pz and zmax.
-        (5)     Determine x, y, z.
-        (6)     Write all into Field2dData object.
+        if instrument == "SDO":
+            hmi_image = sunpy.map.Map(path).rotate()  # type: ignore
+            hdr = hmi_image.fits_header
 
-        Args:
-            path (str): path to .fits file
-            ulon (float): upper longitude
-            llon (float): lower longitude
-            ulat (float): upper latitute
-            llat (float): lower latitute
+            left_corner = SkyCoord(
+                Tx=llon * u.arcsec,  # type: ignore
+                Ty=llat * u.arcsec,  # type: ignore
+                frame=hmi_image.coordinate_frame,
+            )
+            right_corner = SkyCoord(
+                Tx=ulon * u.arcsec,  # type: ignore
+                Ty=ulat * u.arcsec,  # type: ignore
+                frame=hmi_image.coordinate_frame,
+            )
+            image = hmi_image.submap(left_corner, top_right=right_corner).data
 
-        Returns:
-            _type_: _description_
-        """
+        if instrument == "Solar Orbiter":
+            with astroopen(path) as data:  # type: ignore
+                phi_image = getdata(path, ext=False)
+                hdr = data[0].header  # type: ignore
 
-        hmi_image = sunpy.map.Map(path).rotate()  # type: ignore
-
-        hdr = hmi_image.fits_header
-
-        left_corner = SkyCoord(
-            Tx=llon * u.arcsec,  # type: ignore
-            Ty=llat * u.arcsec,  # type: ignore
-            frame=hmi_image.coordinate_frame,
-        )
-        right_corner = SkyCoord(
-            Tx=ulon * u.arcsec,  # type: ignore
-            Ty=ulat * u.arcsec,  # type: ignore
-            frame=hmi_image.coordinate_frame,
-        )
-
-        image = hmi_image.submap(left_corner, top_right=right_corner)
+            image = phi_image[sty:lsty, stx:lstx]  # type: ignore
 
         dist = hdr["DSUN_OBS"]
-        px_unit = hdr["CUNIT1"]
-        py_unit = hdr["CUNIT2"]
+        # px_unit = hdr["CUNIT1"]
+        # py_unit = hdr["CUNIT2"]
         px_arcsec = hdr["CDELT1"]
         py_arcsec = hdr["CDELT2"]
 
-        nx = image.data.shape[1]
-        ny = image.data.shape[0]
+        nx = image.shape[1]
+        ny = image.shape[0]
 
         nf = min(nx, ny)
 
-        px_radians = px_arcsec / 206265.0
-        py_radians = py_arcsec / 206265.0
+        px_radians = px_arcsec / ARCSEC_TO_RADIANS
+        py_radians = py_arcsec / ARCSEC_TO_RADIANS
 
-        dist_Mm = dist * 10**-6
+        dist_Mm = dist / L
         px = px_radians * dist_Mm
         py = py_radians * dist_Mm
 
-        xmin = 0.0
-        ymin = 0.0
-        zmin = 0.0
-
-        xmax = nx * px
-        ymax = ny * py
-        zmax = 20.0
-
-        pz = 90.0 * 10**-3
-        # pz = max(px, py)
-
-        nz = 225  # int(np.floor(zmax / pz))
-        zmax = (nz - 1) * px
-
-        # x = np.arange(nx) * (xmax - xmin) / (nx - 1) - xmin
-        # y = np.arange(ny) * (ymax - ymin) / (ny - 1) - ymin
-        # z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
+        pz = PIXEL_SIZE_Z_DIRECTION_FITS
+        nz = NZ_Z_DIRECTION_FITS
 
         x = np.arange(nx, dtype=np.float64) * px
         y = np.arange(ny, dtype=np.float64) * py
         z = np.arange(nz, dtype=np.float64) * pz
 
-        if np.fabs(check_fluxbalance(image.data)) < 0.01:
+        if check_fluxbalance(image):
             data2d = Field2dData(
                 nx,
                 ny,
@@ -311,7 +191,7 @@ class Field2dData:
                 x,
                 y,
                 z,
-                image.data,
+                image,
                 flux_balance_state=FluxBalanceState.BALANCED,
             )
         else:
@@ -326,11 +206,11 @@ class Field2dData:
                 x,
                 y,
                 z,
-                image.data,
+                image,
                 flux_balance_state=FluxBalanceState.UNBALANCED,
             )
 
-        if path_aia is not None:
+        if instrument == "SDO" and path_aia is not None:
             aia_image = sunpy.map.Map(path_aia).rotate()  # type: ignore
             aia_image_small = aia_image.submap(
                 left_corner, top_right=right_corner
@@ -341,8 +221,231 @@ class Field2dData:
 
         return data2d
 
+    # @classmethod
+    # def from_fits_SolarOrbiter(
+    #     cls, path: str, stx: int, lstx: int, sty: int, lsty: int
+    # ):
+    #     """
+    #     Creates dataclass of type Field2dData from SolarOrbiter Archive data in .fits format.
+    #     Only needs to be handed path to file and the indices one wants to use to cut the region to size,
+    #     then creates Field2dData for extrapolation to 20 Mm.
 
-def check_fluxbalance(bz: np.ndarray) -> float:
+    #     Steps:
+    #     (1)     From the file given at path read in the image and header data refarding the distance to
+    #             the sun, pixel unit and pixel size in arcsec.
+    #     (2)     Cut image to specific size [sty:lsty, stx:lstx] around feature under investigation.
+    #     (3)     Determine nx, ny, nf, px, py, xmax, ymax from data.
+    #     (4)     Choose nz, pz and zmax.
+    #     (5)     Determine x, y, z.
+    #     (6)     Write all into Field2dData object.
+
+    #     Args:
+    #         path (str): path to .fits file
+    #         stx (int): start index x-direction
+    #         lstx (int): last index x-direction
+    #         sty (int): start index y-direction
+    #         lsty (int): last index y-direction
+
+    #     Returns:
+    #         _type_: Field2dData object
+    #     """
+
+    #     with astroopen(path) as data:  # type: ignore
+
+    #         image = getdata(path, ext=False)
+
+    #         hdr = data[0].header  # type: ignore
+    #         dist = hdr["DSUN_OBS"]
+    #         # px_unit = hdr["CUNIT1"]
+    #         # py_unit = hdr["CUNIT2"]
+    #         px_arcsec = hdr["CDELT1"]
+    #         py_arcsec = hdr["CDELT2"]
+
+    #     image_cut = image[sty:lsty, stx:lstx]  # type: ignore
+
+    #     nx = image_cut.shape[1]
+    #     ny = image_cut.shape[0]
+
+    #     nf = min(nx, ny)
+
+    #     px_radians = px_arcsec / 206265.0
+    #     py_radians = py_arcsec / 206265.0
+
+    #     dist_Mm = dist * 10**-6
+    #     px = px_radians * dist_Mm
+    #     py = py_radians * dist_Mm
+
+    #     # pz = np.float64(90.0 * 10**-3)
+    #     pz = max(px, py)
+
+    #     nz = 140  # int(np.floor(zmax / pz))
+    #     # x = np.arange(nx) * (xmax - xmin) / (nx - 1) - xmin
+    #     # y = np.arange(ny) * (ymax - ymin) / (ny - 1) - ymin
+    #     # z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
+    #     x = np.arange(nx, dtype=np.float64) * px
+    #     y = np.arange(ny, dtype=np.float64) * py
+    #     z = np.arange(nz, dtype=np.float64) * pz
+
+    #     if check_fluxbalance(image_cut):
+    #         return Field2dData(
+    #             nx,
+    #             ny,
+    #             nz,
+    #             nf,
+    #             px,
+    #             py,
+    #             pz,
+    #             x,
+    #             y,
+    #             z,
+    #             image_cut,
+    #             flux_balance_state=FluxBalanceState.BALANCED,
+    #         )
+    #     else:
+    #         return Field2dData(
+    #             nx,
+    #             ny,
+    #             nz,
+    #             nf,
+    #             px,
+    #             py,
+    #             pz,
+    #             x,
+    #             y,
+    #             z,
+    #             image_cut,
+    #             flux_balance_state=FluxBalanceState.UNBALANCED,
+    #         )
+
+    # @classmethod
+    # def from_fits_SDO(
+    #     cls,
+    #     path: str,
+    #     ulon: float,
+    #     llon: float,
+    #     ulat: float,
+    #     llat: float,
+    #     path_aia: str | None = None,
+    # ):
+    #     """
+    #     Creates dataclass of type Field2dData from SDO HMI data in .fits format.
+    #     Only needs to be handed path to file and longitudes and latitutes of desired cut out,
+    #     then creates Field2dData for extrapolation to 20 Mm.
+
+    #     Steps:
+    #     (1)     From the file given at path read in the image and header data refarding the distance to
+    #             the sun, pixel unit and pixel size in arcsec.
+    #     (2)     Cut image to specific size round feature under investigation.
+    #     (3)     Determine nx, ny, nf, px, py, xmax, ymax from data.
+    #     (4)     Choose nz, pz and zmax.
+    #     (5)     Determine x, y, z.
+    #     (6)     Write all into Field2dData object.
+
+    #     Args:
+    #         path (str): path to .fits file
+    #         ulon (float): upper longitude
+    #         llon (float): lower longitude
+    #         ulat (float): upper latitute
+    #         llat (float): lower latitute
+
+    #     Returns:
+    #         _type_: _description_
+    #     """
+
+    #     hmi_image = sunpy.map.Map(path).rotate()  # type: ignore
+
+    #     hdr = hmi_image.fits_header
+
+    #     left_corner = SkyCoord(
+    #         Tx=llon * u.arcsec,  # type: ignore
+    #         Ty=llat * u.arcsec,  # type: ignore
+    #         frame=hmi_image.coordinate_frame,
+    #     )
+    #     right_corner = SkyCoord(
+    #         Tx=ulon * u.arcsec,  # type: ignore
+    #         Ty=ulat * u.arcsec,  # type: ignore
+    #         frame=hmi_image.coordinate_frame,
+    #     )
+
+    #     image = hmi_image.submap(left_corner, top_right=right_corner)
+
+    #     dist = hdr["DSUN_OBS"]
+    #     # px_unit = hdr["CUNIT1"]
+    #     # py_unit = hdr["CUNIT2"]
+    #     px_arcsec = hdr["CDELT1"]
+    #     py_arcsec = hdr["CDELT2"]
+
+    #     nx = image.data.shape[1]
+    #     ny = image.data.shape[0]
+
+    #     nf = min(nx, ny)
+
+    #     px_radians = px_arcsec / 206265.0
+    #     py_radians = py_arcsec / 206265.0
+
+    #     dist_Mm = dist * 10**-6
+    #     px = px_radians * dist_Mm
+    #     py = py_radians * dist_Mm
+
+    #     pz = 90.0 * 10**-3
+    #     # pz = max(px, py)
+
+    #     nz = 225  # int(np.floor(zmax / pz))
+
+    #     # x = np.arange(nx) * (xmax - xmin) / (nx - 1) - xmin
+    #     # y = np.arange(ny) * (ymax - ymin) / (ny - 1) - ymin
+    #     # z = np.arange(nz) * (zmax - zmin) / (nz - 1) - zmin
+
+    #     x = np.arange(nx, dtype=np.float64) * px
+    #     y = np.arange(ny, dtype=np.float64) * py
+    #     z = np.arange(nz, dtype=np.float64) * pz
+
+    #     if check_fluxbalance(image.data):
+    #         data2d = Field2dData(
+    #             nx,
+    #             ny,
+    #             nz,
+    #             nf,
+    #             px,
+    #             py,
+    #             pz,
+    #             x,
+    #             y,
+    #             z,
+    #             image.data,
+    #             flux_balance_state=FluxBalanceState.BALANCED,
+    #         )
+    #     else:
+    #         data2d = Field2dData(
+    #             nx,
+    #             ny,
+    #             nz,
+    #             nf,
+    #             px,
+    #             py,
+    #             pz,
+    #             x,
+    #             y,
+    #             z,
+    #             image.data,
+    #             flux_balance_state=FluxBalanceState.UNBALANCED,
+    #         )
+
+
+#
+# if path_aia is not None:
+#     aia_image = sunpy.map.Map(path_aia).rotate()  # type: ignore
+#     aia_image_small = aia_image.submap(
+#         left_corner, top_right=right_corner
+#     ).rotate()
+#     aia_image_resize = resize_aia(data2d, aia_image_small)
+
+#     data2d.EUV = aia_image_resize
+
+# return data2d
+
+
+def check_fluxbalance(bz: np.ndarray) -> bool:
     """
     Summation of flux through the bottom boundary (photospheric Bz) normalised
     by the sum of absolute values. Value between -1 and 1, corresponding to entirely
@@ -356,10 +459,11 @@ def check_fluxbalance(bz: np.ndarray) -> float:
     Returns:
         float: summation of flux through bz
     """
-    return np.sum(bz) / np.sum(np.fabs(bz))
+    return np.fabs(np.sum(bz) / np.sum(np.fabs(bz))) < FLUX_BALANCE_THRESHOLD
 
 
-def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
+def alpha_HS04(field: Field2dData) -> float:
+    # def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
     """
     "Optimal" alpha calculated according to Hagino and Sakurai (2004).
     Alpha is calculated from the vertical electric current in the photosphere
@@ -373,56 +477,37 @@ def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
     Returns:
         float: alpha
     """
-    Jz = np.gradient(by, axis=1) - np.gradient(bx, axis=0)
-    return np.sum(Jz * np.sign(bz)) / np.sum(np.fabs(bz))
+    if field.bx is None or field.by is None:
+        raise ValueError(
+            "bx and by must be provided in Field2dData to calculate alpha_HS04."
+        )
 
-
-def resize_aia(data: Field2dData, aia_image: AIAMap) -> np.ndarray:
-    nx = aia_image.data.shape[1]  # type: ignore
-    ny = aia_image.data.shape[0]  # type: ignore
-
-    x = np.arange(nx) * (data.x[-1] - data.x[0]) / (nx - 1) - data.x[0]
-    y = np.arange(ny) * (data.y[-1] - data.y[0]) / (ny - 1) - data.y[0]
-
-    xv_fine, yv_fine = np.meshgrid(data.x, data.y)
-    xv, yv = np.meshgrid(x, y)
-
-    return griddata(
-        np.column_stack((yv.flatten(), xv.flatten())),
-        aia_image.data.flatten(),
-        np.column_stack((yv_fine.flatten(), xv_fine.flatten())),
-        method="cubic",
-    ).reshape(data.bz.shape)
+    Jz = np.gradient(field.by, axis=1) - np.gradient(field.bx, axis=0)
+    return np.sum(Jz * np.sign(field.bz)) / np.sum(np.fabs(field.bz))
 
 
 def maximal_a(field: Field2dData, alpha: float, b: float) -> float:
+    from mhsxtrapy.b3d import compute_wavenumbers
 
     if field.flux_balance_state == FluxBalanceState.BALANCED:
-        l = 1.0
+        lengthscale = 1.0
         nf = int(np.floor(field.nf / 2))
     elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
-        l = 2.0
+        lengthscale = 2.0
         nf = field.nf
     else:
         raise ValueError(
             f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
         )
 
-    lx = field.nx * field.px * l
-    ly = field.ny * field.py * l
-    lxn = lx / l
-    lyn = ly / l
+    lx = field.nx * field.px * lengthscale
+    ly = field.ny * field.py * lengthscale
+    lxn = lx / lengthscale
+    lyn = ly / lengthscale
 
-    if field.flux_balance_state == FluxBalanceState.BALANCED:
-        kx = np.arange(nf) * 2.0 * np.pi / lxn
-        ky = np.arange(nf) * 2.0 * np.pi / lyn
-    elif field.flux_balance_state == FluxBalanceState.UNBALANCED:
-        kx = np.arange(nf) * np.pi / lxn
-        ky = np.arange(nf) * np.pi / lyn
-    else:
-        raise ValueError(
-            f"Invalid flux_balance_state: {field.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
-        )
+    kx, ky, k2 = compute_wavenumbers(
+        field.nx, field.ny, field.px, field.py, nf, field.flux_balance_state, lxn, lyn
+    )
 
     ones = 0.0 * np.arange(nf) + 1.0
 
@@ -442,3 +527,21 @@ def maximal_a(field: Field2dData, alpha: float, b: float) -> float:
     a_max = 1.0 / (1.0 + b) * (1.0 - alpha**2 / k2.min())
 
     return a_max
+
+
+def resize_aia(data: Field2dData, aia_image: AIAMap) -> np.ndarray:
+    nx = aia_image.data.shape[1]  # type: ignore
+    ny = aia_image.data.shape[0]  # type: ignore
+
+    x = np.arange(nx) * (data.x[-1] - data.x[0]) / (nx - 1) - data.x[0]
+    y = np.arange(ny) * (data.y[-1] - data.y[0]) / (ny - 1) - data.y[0]
+
+    xv_fine, yv_fine = np.meshgrid(data.x, data.y)
+    xv, yv = np.meshgrid(x, y)
+
+    return griddata(
+        np.column_stack((yv.flatten(), xv.flatten())),
+        aia_image.data.flatten(),
+        np.column_stack((yv_fine.flatten(), xv_fine.flatten())),
+        method="cubic",
+    ).reshape(data.bz.shape)
