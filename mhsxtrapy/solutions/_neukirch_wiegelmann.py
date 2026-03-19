@@ -3,10 +3,10 @@ from __future__ import annotations
 import numpy as np
 from scipy.special import hyp2f1
 
-from ._base import Solution
+from ._base import BaseSolution
 
 
-class NeuWieSolution(Solution):
+class NeuWieSolution(BaseSolution):
 
     def __init__(self, z0: float, deltaz: float, a: float, b: float):
         self.z0 = z0

@@ -3,10 +3,10 @@ from __future__ import annotations
 import numpy as np
 from scipy.special import jv
 
-from ._base import Solution
+from ._base import BaseSolution
 
 
-class LowSolution(Solution):
+class LowSolution(BaseSolution):
 
     def __init__(self, kappa: float, a: float):
         self.kappa = kappa

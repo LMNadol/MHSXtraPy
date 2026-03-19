@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class Solution(ABC):
+class BaseSolution(ABC):
 
     @abstractmethod
     def phi(self, z, p, q):

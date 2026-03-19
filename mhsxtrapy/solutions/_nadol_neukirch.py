@@ -3,11 +3,11 @@ from __future__ import annotations
 import numpy as np
 from numba import njit
 
-from ._base import Solution
+from ._base import BaseSolution
 from ._neukirch_wiegelmann import dfdz_nw, f_nw
 
 
-class NaNeuSolution(Solution):
+class NaNeuSolution(BaseSolution):
 
     def __init__(self, z0: float, deltaz: float, a: float, b: float):
         self.z0 = z0
