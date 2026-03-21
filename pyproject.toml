@@ -4,23 +4,35 @@ version = "0.1.0"
 description = "Magnetohydrostatic extrapolation of photospheric magnetic field data into the solar corona"
 readme = "README.md"
 requires-python = ">=3.14"
+license = "GPL-3.0-or-later"
+authors = [
+    { name = "Lilli Nadol", email = "lillinadol@gmail.com" },
+]
+keywords = [
+    "solar physics",
+    "magnetohydrostatics",
+    "magnetic field extrapolation",
+    "solar corona",
+    "photosphere",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Typing :: Typed",
+]
 dependencies = [
     "astropy>=7.2.0",
-    "bs4>=0.0.2",
-    "drms>=0.9.0",
     "h5py>=3.16.0",
-    "ipywidgets>=8.1.8",
-    "lxml>=6.0.2",
     "matplotlib>=3.10.8",
-    "mpl-animators>=1.2.4",
     "numba>=0.64.0",
     "numpy>=2.4.3",
-    "pre-commit>=4.5.1",
-    "pytest>=9.0.2",
-    "reproject>=0.19.0",
     "scipy>=1.17.1",
     "sunpy>=7.1.0",
-    "zeep>=4.3.2",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +43,11 @@ test = [
     "pytest>=8.0.0",
     "pytest-cov>=6.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/LMNadol/MHSXtraPy"
+Repository = "https://github.com/LMNadol/MHSXtraPy"
+Issues = "https://github.com/LMNadol/MHSXtraPy/issues"
 
 [tool.setuptools.packages.find]
 include = ["mhsxtrapy*"]
