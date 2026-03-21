@@ -44,7 +44,7 @@ rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=LATEX_ON)
 
 
-def plot_magnetogram(data: BoundaryData) -> None:
+def plot_magnetogram(data: BoundaryData) -> tuple[plt.Figure, plt.Axes]:
     """
     Plot photospheric boundary condition as basis for field line figures.
 
@@ -91,7 +91,7 @@ def plot_magnetogram(data: BoundaryData) -> None:
     return fig, ax
 
 
-def plot_dpressure_z(data: ExtrapolationResult) -> None:
+def plot_dpressure_z(data: ExtrapolationResult) -> tuple[plt.Figure, plt.Axes]:
     """
     Plots vertical variation in pressure at x and y where Bz is maximal on the photosphere.
 
@@ -144,7 +144,7 @@ def plot_dpressure_z(data: ExtrapolationResult) -> None:
     return fig, ax
 
 
-def plot_ddensity_z(data: ExtrapolationResult) -> None:
+def plot_ddensity_z(data: ExtrapolationResult) -> tuple[plt.Figure, plt.Axes]:
     """
     Plots vertical variation in density at x and y where Bz is maximal on the photosphere.
 
@@ -203,7 +203,7 @@ def plot_field_3d(
     n_lines_y: int | None = DEFAULT_N_LINES,
     pixel_stride_x: int | None = DEFAULT_PIXEL_STRIDE,
     pixel_stride_y: int | None = DEFAULT_PIXEL_STRIDE,
-):
+) -> tuple[plt.Figure, plt.Axes]:
     """
     Create figure of magnetic field line from ExtrapolationResult object. Specify angle of view and optional zoom
     for the side view onto the transition region, which footpoints are chosen for field lines.
@@ -330,7 +330,7 @@ def plot_field_3d(
     return fig, ax
 
 
-def show_poles(data: ExtrapolationResult):
+def show_poles(data: ExtrapolationResult) -> None:
     """
     Show centres of poles on photospheric magnetogram.
     """
@@ -444,9 +444,9 @@ def find_corners_SDO(
     llon: float,
     ulat: float,
     llat: float,
-    cmap=cmap_magneto,
-    norm=norm_hmi,
-) -> None:
+    cmap: object = cmap_magneto,
+    norm: object = norm_hmi,
+) -> tuple[plt.Figure, plt.Axes, plt.Axes]:
     """
     Plots SDO magnetogram and cut-out region defined through ulon, llon, ulat and llat.
 
@@ -561,7 +561,7 @@ def find_corners_SDO(
 
 def find_corners_SolarOrbiter(
     path: str, stx: float, lstx: float, sty: float, lsty: float
-) -> None:
+) -> tuple[plt.Figure, plt.Axes]:
     """
     Plots Solar Orbiter magnetogram and cut-out region defined through ulon, llon, ulat and llat.
 
@@ -604,7 +604,9 @@ def find_corners_SolarOrbiter(
     return fig, ax
 
 
-def plot_dpressure_xy(data: ExtrapolationResult, z: np.float64) -> None:
+def plot_dpressure_xy(
+    data: ExtrapolationResult, z: np.float64
+) -> tuple[plt.Figure, plt.Axes]:
     """
     Plots 2D pressure variation array at height z.
 
@@ -656,7 +658,9 @@ def plot_dpressure_xy(data: ExtrapolationResult, z: np.float64) -> None:
     return fig, ax
 
 
-def plot_ddensity_xy(data: ExtrapolationResult, z: np.float64) -> None:
+def plot_ddensity_xy(
+    data: ExtrapolationResult, z: np.float64
+) -> tuple[plt.Figure, plt.Axes]:
     """
     Plots 2D density variation array at height z.
 

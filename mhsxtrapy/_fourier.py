@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Tuple
 
 import numpy as np
 
@@ -15,7 +14,7 @@ class FourierCoefficients:
     cnm: np.ndarray
     dnm: np.ndarray
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: float | np.ndarray) -> FourierCoefficients:
         return FourierCoefficients(
             anm=self.anm / other,
             bnm=self.bnm / other,
@@ -140,7 +139,16 @@ def _extract_fourier_modes(
     return FourierCoefficients(anm, bnm, cnm, dnm)
 
 
-def _compute_wavenumbers(nx, ny, px, py, nf, flux_balance_state, lxn, lyn) -> Tuple:
+def _compute_wavenumbers(
+    nx: int,
+    ny: int,
+    px: float,
+    py: float,
+    nf: int,
+    flux_balance_state: FluxBalanceState,
+    lxn: float,
+    lyn: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     if flux_balance_state == FluxBalanceState.BALANCED:
         kx = np.arange(nf) * 2.0 * np.pi / lxn

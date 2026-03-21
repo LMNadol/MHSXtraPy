@@ -82,7 +82,9 @@ class BoundaryData:
         )
 
     @classmethod
-    def from_array(cls, bz, pixel_size, nz, pz):
+    def from_array(
+        cls, bz: np.ndarray, pixel_size: float, nz: int, pz: float
+    ) -> BoundaryData:
 
         nx = bz.shape[1]
         ny = bz.shape[0]
@@ -129,7 +131,7 @@ class BoundaryData:
         lstx: int | None = None,
         sty: int | None = None,
         lsty: int | None = None,
-    ):
+    ) -> BoundaryData:
 
         if instrument == "SDO":
             hmi_image = sunpy.map.Map(path).rotate()  # type: ignore

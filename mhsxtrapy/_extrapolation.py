@@ -2,14 +2,19 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Tuple
 
 import numpy as np
 
 from mhsxtrapy._boundary import BoundaryData, FluxBalanceState
-from mhsxtrapy._fourier import _compute_fourier_coefficients, _compute_wavenumbers
+from mhsxtrapy._fourier import (
+    FourierCoefficients,
+    _compute_fourier_coefficients,
+    _compute_wavenumbers,
+)
 from mhsxtrapy.solutions import get_solution
 from mhsxtrapy.types import WhichSolution
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -28,7 +33,7 @@ def _get_phi_dphi(
     z0: float | None = None,
     deltaz: float | None = None,
     kappa: float | None = None,
-):
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns two arrays of size (nf, nf, nz,) of the values of the functions bar-Phi and
     its z-derivative for either Low, N+W or N+W-A, depending on the value of the Enum solution.
@@ -66,7 +71,21 @@ def _get_phi_dphi(
 
 
 def _compute_field_at_height(
-    iz, nx, ny, nf, sin_x, cos_x, sin_y, cos_y, phi, dphi, coeffs, kx, ky, k2, alpha
+    iz: int,
+    nx: int,
+    ny: int,
+    nf: int,
+    sin_x: np.ndarray,
+    cos_x: np.ndarray,
+    sin_y: np.ndarray,
+    cos_y: np.ndarray,
+    phi: np.ndarray,
+    dphi: np.ndarray,
+    coeffs: FourierCoefficients,
+    kx: np.ndarray,
+    ky: np.ndarray,
+    k2: np.ndarray,
+    alpha: float,
 ) -> MagneticField:
     # Single z-level field computation
 
@@ -193,7 +212,7 @@ def _extrapolate_3d(
     z0: float | None = None,
     deltaz: float | None = None,
     kappa: float | None = None,
-) -> Tuple:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Calculate 3D magnetic field from BoundaryData and given paramters a, b, alpha, z0 and delta z
     (for definitions see PhD thesis L Nadol). Extrapolation based on either Low, N+W or N+W-A
@@ -270,7 +289,7 @@ def _extrapolate_3d(
         p = 2.0 / kappa * np.sqrt(k2 - alpha**2)
         q = 2.0 / kappa * np.sqrt(k2 * a)
     else:
-        logging.warning(f"Unknown solution type: {solution}.")
+        logger.warning("Unknown solution type: %s.", solution)
         raise ValueError(
             f"Unknown solution type: {solution}. Expected 'LOW' or 'NEUWIE' or 'NANEU'."
         )

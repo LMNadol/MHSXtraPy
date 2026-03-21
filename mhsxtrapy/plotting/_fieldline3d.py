@@ -28,7 +28,9 @@ nn1, nn3, nn4, nn5, nn6 = 16 / 135, 6656 / 12825, 28561 / 56430, -9 / 50, 2 / 55
 
 
 @njit
-def trilinear3d(pt, grid, xx, yy, zz):
+def trilinear3d(
+    pt: np.ndarray, grid: np.ndarray, xx: np.ndarray, yy: np.ndarray, zz: np.ndarray
+) -> np.ndarray:
     """
     Given a point, pt, in the grid with dimensions xx, yy and zz,
     returns the value of grid under the trilinear assumption.
@@ -48,12 +50,11 @@ def trilinear3d(pt, grid, xx, yy, zz):
 
 
 @njit
-def trilinear3d_grid(pt, grid):
+def trilinear3d_grid(pt: np.ndarray, grid: np.ndarray) -> np.ndarray:
     """
     Given a point, pt, in grid coordinates in the grid,
     returns the value of grid under the trilinear assumption.
     """
-    # print("pt", pt)
     ix = floor(pt[0])
     iy = floor(pt[1])
     iz = floor(pt[2])
@@ -62,20 +63,21 @@ def trilinear3d_grid(pt, grid):
     y = pt[1] - iy
     z = pt[2] - iz
 
-    # print("ix,iy,iz", ix, iy, iz)
-    # print("x,y,z", x, y, z)
-
     cube = grid[ix : ix + 2, iy : iy + 2, iz : iz + 2, ...]
     square = (1 - x) * cube[0, :, :, ...] + x * cube[1, :, :, ...]
     line = (1 - y) * square[0, :, ...] + y * square[1, :, ...]
-
-    # print((1 - z) * line[0, ...] + z * line[1, ...])
 
     return (1 - z) * line[0, ...] + z * line[1, ...]
 
 
 @njit
-def getdr(r, x, y, z, csystem):
+def getdr(
+    r: np.ndarray,
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    csystem: np.ndarray,
+) -> np.ndarray:
     """
     Returns the infinitesimal line element at a point, r, in the correct coordinate system.
     """
@@ -100,7 +102,7 @@ def getdr(r, x, y, z, csystem):
 
 
 @njit
-def gtr(pt, x, y, z):
+def gtr(pt: np.ndarray, x: np.ndarray, y: np.ndarray, z: np.ndarray) -> None:
     """
     Converts a point from grid coordinates to real coordinates.
     """
@@ -121,7 +123,12 @@ def gtr(pt, x, y, z):
 
 
 @njit
-def edgecheck(r, minmax, csystem, periodicity):
+def edgecheck(
+    r: np.ndarray,
+    minmax: np.ndarray,
+    csystem: np.ndarray,
+    periodicity: np.ndarray,
+) -> None:
     """
     Checks whether a point, r, has exited the grid through a periodic boundary and if so, moves the point back into the grid using the periodicity.
     """
@@ -176,7 +183,12 @@ def edgecheck(r, minmax, csystem, periodicity):
 
 
 @njit
-def outedge(r, minmax_box, csystem, periodicity):
+def outedge(
+    r: np.ndarray,
+    minmax_box: np.ndarray,
+    csystem: np.ndarray,
+    periodicity: np.ndarray,
+) -> bool:
     """
     Checks whether a point, r, has left the domain.
     """
@@ -228,24 +240,24 @@ def outedge(r, minmax_box, csystem, periodicity):
 
 @njit
 def rkf45(
-    r0,
-    bgrid,
-    x,
-    y,
-    z,
-    h,
-    hmin,
-    hmax,
-    epsilon,
-    maxpoints,
-    oneway,
-    stop_criteria,
-    t_max,
-    minmax,
-    minmax_box,
-    csystem,
-    periodicity,
-):
+    r0: np.ndarray,
+    bgrid: np.ndarray,
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    h: float,
+    hmin: float,
+    hmax: float,
+    epsilon: float,
+    maxpoints: int,
+    oneway: bool,
+    stop_criteria: bool,
+    t_max: float,
+    minmax: np.ndarray,
+    minmax_box: np.ndarray,
+    csystem: np.ndarray,
+    periodicity: np.ndarray,
+) -> list[np.ndarray]:
     """
     The actual line tracer after the checks have been made and set up by fieldline3d function. This has been separated from fieldline3d in order to use numba's jit.
     """
@@ -433,24 +445,24 @@ def rkf45(
 
 
 def fieldline3d(
-    startpt,
-    bgrid,
-    x,
-    y,
-    z,
-    h,
-    hmin,
-    hmax,
-    epsilon,
-    maxpoints=50000,
-    t_max=1.1,
-    oneway=False,
-    boxedge=None,
-    coordsystem="cartesian",
-    gridcoord=False,
-    stop_criteria=True,
-    periodicity=None,
-):
+    startpt: np.ndarray,
+    bgrid: np.ndarray,
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    h: float,
+    hmin: float,
+    hmax: float,
+    epsilon: float,
+    maxpoints: int = 50000,
+    t_max: float = 1.1,
+    oneway: bool = False,
+    boxedge: np.ndarray | None = None,
+    coordsystem: str = "cartesian",
+    gridcoord: bool = False,
+    stop_criteria: bool = True,
+    periodicity: str | np.ndarray | None = None,
+) -> np.ndarray:
     """
     Calculates 3D field line which goes through the point startpt
     startpt - 3 element, 1D array as start point for field line calculation
@@ -523,10 +535,6 @@ def fieldline3d(
         [0, x.shape[0] - 1, 0, y.shape[0] - 1, 0, z.shape[0] - 1], dtype=np.float64
     )
 
-    # print("minmax", minmax)
-
-    # print("boxedge", boxedge)
-
     if boxedge is not None:
         periodicity[:] = False
         boxedge1 = boxedge.copy()
@@ -566,10 +574,6 @@ def fieldline3d(
         r0[2] = iz + (startpt[2] - z[iz]) / (z[iz + 1] - z[iz])
     else:
         r0 = startpt.copy()
-
-    # print("r0", r0)
-
-    # print("minmax_box", minmax_box)
 
     # Produce an error if the first point isn't in the box
     if (

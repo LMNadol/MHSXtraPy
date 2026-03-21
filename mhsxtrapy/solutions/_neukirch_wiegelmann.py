@@ -14,16 +14,20 @@ class NeukirchWiegelmannSolution(BaseSolution):
         self.a = a
         self.b = b
 
-    def phi(self, z, p, q):
+    def phi(
+        self, z: np.float64, p: np.ndarray, q: np.ndarray
+    ) -> np.float64 | np.ndarray:
         return phi_nw(z, p, q, self.z0, self.deltaz)
 
-    def dphidz(self, z, p, q):
+    def dphidz(
+        self, z: np.float64, p: np.ndarray, q: np.ndarray
+    ) -> np.float64 | np.ndarray:
         return dphidz_nw(z, p, q, self.z0, self.deltaz)
 
-    def f(self, z):
+    def f(self, z: np.ndarray) -> np.ndarray:
         return f_nw(z, self.z0, self.deltaz, self.a, self.b)
 
-    def dfdz(self, z):
+    def dfdz(self, z: np.ndarray) -> np.ndarray:
         return dfdz_nw(z, self.z0, self.deltaz, self.a, self.b)
 
 

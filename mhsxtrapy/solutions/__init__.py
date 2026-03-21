@@ -4,6 +4,7 @@ from functools import lru_cache
 
 from mhsxtrapy.types import WhichSolution
 
+from ._base import BaseSolution
 from ._low import LowSolution
 from ._nadol_neukirch import NadolNeukirchSolution
 from ._neukirch_wiegelmann import NeukirchWiegelmannSolution
@@ -13,14 +14,14 @@ __all__ = []
 
 @lru_cache
 def get_solution(
-    which,
+    which: WhichSolution,
     *,
     a: float | None = None,
     b: float | None = None,
     z0: float | None = None,
     deltaz: float | None = None,
     kappa: float | None = None,
-):
+) -> BaseSolution:
     if which == WhichSolution.LOW:
         return LowSolution(kappa=kappa, a=a)
     elif which == WhichSolution.NEUKIRCH_WIEGELMANN:

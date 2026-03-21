@@ -15,7 +15,9 @@ rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=LATEX_ON)
 
 
-def plot_fieldlines_grid(data: ExtrapolationResult, ax, n_lines_x, n_lines_y) -> None:
+def plot_fieldlines_grid(
+    data: ExtrapolationResult, ax: object, n_lines_x: int, n_lines_y: int
+) -> None:
     """
     Plot field lines on grid.
 
@@ -112,10 +114,10 @@ def plot_fieldlines_AR(
     data: ExtrapolationResult,
     sinks: np.ndarray,
     sources: np.ndarray,
-    ax,
-    pixel_stride_x,
-    pixel_stride_y,
-):
+    ax: object,
+    pixel_stride_x: int,
+    pixel_stride_y: int,
+) -> None:
     """
     Plot field lines starting at detected foot points around poles.
 

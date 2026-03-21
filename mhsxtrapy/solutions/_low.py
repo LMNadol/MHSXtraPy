@@ -12,16 +12,20 @@ class LowSolution(BaseSolution):
         self.kappa = kappa
         self.a = a
 
-    def phi(self, z, p, q):
+    def phi(
+        self, z: np.float64, p: np.ndarray, q: np.ndarray
+    ) -> np.float64 | np.ndarray:
         return phi_low(z, p, q, self.kappa)
 
-    def dphidz(self, z, p, q):
+    def dphidz(
+        self, z: np.float64, p: np.ndarray, q: np.ndarray
+    ) -> np.float64 | np.ndarray:
         return dphidz_low(z, p, q, self.kappa)
 
-    def f(self, z):
+    def f(self, z: np.ndarray) -> np.ndarray:
         return f_low(z, self.a, self.kappa)
 
-    def dfdz(self, z):
+    def dfdz(self, z: np.ndarray) -> np.ndarray:
         return dfdz_low(z, self.a, self.kappa)
 
 

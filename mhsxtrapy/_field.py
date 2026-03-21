@@ -119,7 +119,7 @@ class ExtrapolationResult:
             f"flux_balance={self.flux_balance_state.value}{extra_str})"
         )
 
-    def save(self, path):
+    def save(self, path: str | os.PathLike) -> None:
         """
         Save ExtrapolationResult object as HDF5 file.
         """
@@ -137,7 +137,7 @@ class ExtrapolationResult:
                     f.attrs[name] = attribute
 
     @classmethod
-    def load(cls, path):
+    def load(cls, path: str | os.PathLike) -> ExtrapolationResult:
         """
         Load ExtrapolationResult object from HDF5 file.
         """
@@ -162,19 +162,19 @@ class ExtrapolationResult:
         return cls(**data)
 
     @cached_property
-    def B0(self):
+    def B0(self) -> float:
         return self.field[
             :, :, 0, 2
         ].max()  # Gauss background magnetic field strength in 10^-4 kg/(s^2A) = 10^-4 T
 
     @cached_property
-    def PB0(self):
+    def PB0(self) -> float:
         return (self.B0 * 10**-4) ** 2 / (
             2 * MU0
         )  # magnetic pressure b0**2 / 2mu0 in kg/(s^2m)
 
     @cached_property
-    def BETA0(self):
+    def BETA0(self) -> float:
         return P0 / self.PB0  # Plasma Beta, ration plasma to magnetic pressure
 
     @cached_property
