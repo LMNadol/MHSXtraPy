@@ -123,8 +123,10 @@ class ExtrapolationResult:
         """
         Save ExtrapolationResult object as HDF5 file.
         """
-        if os.path.isdir(path):
-            path = os.path.join(path, "field3d.h5")
+        path_dir = os.fspath(path)
+        if os.path.isdir(path_dir) or path_dir.endswith(("/", os.sep)):
+            path = os.path.join(path_dir, "field3d.h5")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with h5py.File(path, "w") as f:
             for name, attribute in self.__dict__.items():
                 if isinstance(attribute, np.ndarray):
