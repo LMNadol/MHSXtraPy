@@ -35,3 +35,8 @@ include = ["mhsxtrapy*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
+
+[dependency-groups]
+dev = [
+    "ty>=0.0.23",
+]

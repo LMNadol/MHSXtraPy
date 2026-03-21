@@ -1,183 +1,28 @@
 from __future__ import annotations
 
 import math
-import os
-from typing import Literal
 
-import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import rc
 
-from mhsxtrapy.constants import DEFAULT_N_LINES, DEFAULT_PIXEL_STRIDE, LATEX_ON
-from mhsxtrapy.field3d import Field3dData
-from mhsxtrapy.plotting.fieldline3d import fieldline3d
-from mhsxtrapy.types import FluxBalanceState
+from mhsxtrapy._constants import LATEX_ON
+from mhsxtrapy._field import ExtrapolationResult
+from mhsxtrapy.plotting._fieldline3d import fieldline3d
 
-from .utils import (
-    _get_coordinates,
-    _make_boxedges,
-    cmap_aia,
-    cmap_magneto,
-    detect_footpoints,
-    norm_aia,
-    set_axis_labels,
-)
+from ._utils import _get_coordinates, _make_boxedges
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=LATEX_ON)
 
 
-def plot_magnetogram_3D(
-    data: Field3dData,
-    view: Literal["los", "side", "angular"],
-    footpoints: Literal["all", "active-regions"],
-    boundary: Literal["FeI-6173", "EUV"] = "FeI-6173",
-    n_lines_x: int | None = DEFAULT_N_LINES,
-    n_lines_y: int | None = DEFAULT_N_LINES,
-    pixel_stride_x: int | None = DEFAULT_PIXEL_STRIDE,
-    pixel_stride_y: int | None = DEFAULT_PIXEL_STRIDE,
-):
-    """
-    Create figure of magnetic field line from Field3dData object. Specify angle of view and optional zoom
-    for the side view onto the transition region, which footpoints are chosen for field lines.
-
-    Args:
-        data (Field3dData): magnetic field data
-        view (Literal[&quot;los&quot;, &quot;side&quot;, &quot;angular&quot;]): which view should be displayed
-        footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
-
-    Raises:
-        ValueError: In case view value is wrong
-        ValueError: In case footpoints value is wrong
-    """
-
-    if boundary == "EUV":
-        if data.EUV is None:
-            raise ValueError("EUV selected as boundary, but no EUV image provided.")
-
-    xmin, xmax, ymin, ymax, zmin, zmax = (
-        data.x[0],
-        data.x[-1],
-        data.y[0],
-        data.y[-1],
-        data.z[0],
-        data.z[-1],
-    )
-
-    x, y, z = _get_coordinates(data)
-    x_grid, y_grid = np.meshgrid(x, y)
-
-    if data.flux_balance_state == FluxBalanceState.UNBALANCED:
-        x_grid = x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx]
-        y_grid = y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx]
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
-
-    if boundary == "EUV":
-        ax.contourf(
-            x_grid,
-            y_grid,
-            data.EUV,
-            1000,
-            cmap=cmap_aia,
-            norm=norm_aia,
-            offset=0.0,
-        )
-    else:
-        ax.contourf(
-            x_grid,
-            y_grid,
-            data.bz,
-            20,
-            cmap=cmap_magneto,
-            offset=0.0,
-        )
-
-    ax.set_xlabel(r"$x$ [Mm]", size=14)
-    ax.set_ylabel(r"$y$ [Mm]", size=14)
-    ax.set_zlabel(r"$z$ [Mm]", size=14)  # type: ignore
-    ax.grid(False)
-    ax.set_zlim(zmin, zmax)  # type: ignore
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(ymin, ymax)
-    ax.set_box_aspect((xmax, ymax, zmax))  # type: ignore
-
-    x_length = abs(xmax - xmin)
-    y_length = abs(ymax - ymin)
-    z_length = abs(zmax - zmin)
-    # max_length = max(x_length, y_length, z_length)
-
-    # Set axis labels with dynamic positioning
-    set_axis_labels(ax, x_length, y_length, z_length)
-
-    if footpoints == "all":
-        plot_fieldlines_grid(data, ax, n_lines_x, n_lines_y)
-    elif footpoints == "active-regions":
-        sinks, sources = detect_footpoints(data)
-        plot_fieldlines_AR(data, sinks, sources, ax, pixel_stride_x, pixel_stride_y)
-    else:
-        raise ValueError(
-            f"Invalid footpoints option: {footpoints}. Choose from 'all' or 'active-regions'."
-        )
-
-    if view == "los":
-        ax.view_init(90, -90)  # type: ignore
-        ax.set_zticklabels([])  # type: ignore
-        ax.set_zlabel("")  # type: ignore
-
-        [t.set_va("center") for t in ax.get_yticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_yticklabels()]  # type: ignore
-
-        [t.set_va("center") for t in ax.get_xticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_xticklabels()]  # type: ignore
-    elif view == "side":
-        ax.set_zticks(np.linspace(zmin, zmax, 5))
-        ax.view_init(0, -90)  # type: ignore
-        ax.set_yticklabels([])  # type: ignore
-        ax.set_ylabel("")
-
-        [t.set_va("top") for t in ax.get_xticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_xticklabels()]  # type: ignore
-
-        [t.set_va("top") for t in ax.get_zticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_zticklabels()]  # type: ignore
-
-    elif view == "angular":
-        ax.set_zticks(np.linspace(zmin, zmax, 5))
-        ax.view_init(30, 240, 0)  # type: ignore
-
-        [t.set_va("bottom") for t in ax.get_yticklabels()]  # type: ignore
-        [t.set_ha("right") for t in ax.get_yticklabels()]  # type: ignore
-
-        [t.set_va("bottom") for t in ax.get_xticklabels()]  # type: ignore
-        [t.set_ha("left") for t in ax.get_xticklabels()]  # type: ignore
-
-        [t.set_va("top") for t in ax.get_zticklabels()]  # type: ignore
-        [t.set_ha("center") for t in ax.get_zticklabels()]  # type: ignore
-    else:
-        raise ValueError(
-            f"Invalid view option: {view}. Choose from 'los', 'side', or 'angular'."
-        )
-
-    # Ensure the 'figures' directory exists
-    if not os.path.exists("figures"):
-        os.makedirs("figures")
-    # plt.colorbar(C)
-    # Construct the path using the view variable
-    path = f"figures/magnetogram-3D_{view}.png"
-
-    plt.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.4)
-
-    plt.show()
-
-
-def plot_fieldlines_grid(data: Field3dData, ax, n_lines_x, n_lines_y) -> None:
+def plot_fieldlines_grid(
+    data: ExtrapolationResult, ax: object, n_lines_x: int, n_lines_y: int
+) -> None:
     """
     Plot field lines on grid.
 
     Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
         ax (_type_): previous plotting environment
     """
 
@@ -266,18 +111,18 @@ def plot_fieldlines_grid(data: Field3dData, ax, n_lines_x, n_lines_y) -> None:
 
 
 def plot_fieldlines_AR(
-    data: Field3dData,
+    data: ExtrapolationResult,
     sinks: np.ndarray,
     sources: np.ndarray,
-    ax,
-    pixel_stride_x,
-    pixel_stride_y,
-):
+    ax: object,
+    pixel_stride_x: int,
+    pixel_stride_y: int,
+) -> None:
     """
     Plot field lines starting at detected foot points around poles.
 
     Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
         sinks (np.ndarray): regions of negative flux
         sources (np.ndarray): regions of positive flux
         ax (_type_): previous plotting environment

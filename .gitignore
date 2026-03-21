@@ -75,6 +75,7 @@ test-files/
 *.pdf
 *.pkl
 *.png
+results/
 
 # ==========================
 # Logs

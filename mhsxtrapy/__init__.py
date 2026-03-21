@@ -1,5 +1,10 @@
-from mhsxtrapy.field3d import calculate_magfield
+from importlib.metadata import version
+
+from mhsxtrapy._field import _extrapolate_3d
+
+__version__ = version("mhsxtrapy")
 
 __all__ = [
-    "calculate_magfield",
+    "_extrapolate_3d",
+    "__version__",
 ]

@@ -8,13 +8,13 @@ from functools import cached_property
 import h5py
 import numpy as np
 
-from mhsxtrapy.b3d import WhichSolution, b3d
-from mhsxtrapy.constants import G_SOLAR, KB, MBAR, MU0, P0, T_CORONA, T_PHOTOSPHERE, L
-from mhsxtrapy.field2d import Field2dData, FluxBalanceState
+from mhsxtrapy._boundary import BoundaryData, FluxBalanceState
+from mhsxtrapy._constants import MU0, P0, L
+from mhsxtrapy._extrapolation import WhichSolution, _extrapolate_3d
 from mhsxtrapy.solutions import get_solution
 
 __all__ = [
-    "Field3dData",
+    "ExtrapolationResult",
 ]
 
 # TO DO The `field` array stores components as `[By, Bx, Bz]` (indices 0, 1, 2). This is non-standard and error-prone. Either:
@@ -23,11 +23,11 @@ __all__ = [
 
 
 @dataclass
-class Field3dData:
+class ExtrapolationResult:
     """
-    Dataclass of type Field3dData with the following attributes:
+    Dataclass of type ExtrapolationResult with the following attributes:
     ------------------------------------------------------------------------------------------------------
-    Taken from Field2dData object which Field3dData object is based on:
+    Taken from BoundaryData object which ExtrapolationResult object is based on:
     nx, ny, nz  :   Dimensions of 3D magnetic field, usually nx and ny determined by magnetogram size,
                     while nz defined by user through height to which extrapolation is carried out.
     nf          :   Number of Fourier modes used in calculation of magnetic field vector, usually
@@ -60,7 +60,7 @@ class Field3dData:
         ValueError: In case solution and parameter choices do not agree
 
     Returns:
-        _type_: Field3dData object
+        _type_: ExtrapolationResult object
     """
 
     nx: int
@@ -113,15 +113,15 @@ class Field3dData:
         if extra_str:
             extra_str = ", " + extra_str
         return (
-            f"Field3dData(nx={self.nx}, ny={self.ny}, nz={self.nz}, nf={self.nf}, "
+            f"ExtrapolationResult(nx={self.nx}, ny={self.ny}, nz={self.nz}, nf={self.nf}, "
             f"field={self.field.shape}, solution={self.solution.value}, "
             f"alpha={self.alpha}, a={self.a}, "
             f"flux_balance={self.flux_balance_state.value}{extra_str})"
         )
 
-    def save(self, path):
+    def save(self, path: str | os.PathLike) -> None:
         """
-        Save Field3dData object as HDF5 file.
+        Save ExtrapolationResult object as HDF5 file.
         """
         if os.path.isdir(path):
             path = os.path.join(path, "field3d.h5")
@@ -137,9 +137,9 @@ class Field3dData:
                     f.attrs[name] = attribute
 
     @classmethod
-    def load(cls, path):
+    def load(cls, path: str | os.PathLike) -> ExtrapolationResult:
         """
-        Load Field3dData object from HDF5 file.
+        Load ExtrapolationResult object from HDF5 file.
         """
         _enum_fields = {
             "solution": WhichSolution,
@@ -162,119 +162,20 @@ class Field3dData:
         return cls(**data)
 
     @cached_property
-    def B0(self):
+    def B0(self) -> float:
         return self.field[
             :, :, 0, 2
         ].max()  # Gauss background magnetic field strength in 10^-4 kg/(s^2A) = 10^-4 T
 
     @cached_property
-    def PB0(self):
+    def PB0(self) -> float:
         return (self.B0 * 10**-4) ** 2 / (
             2 * MU0
         )  # magnetic pressure b0**2 / 2mu0 in kg/(s^2m)
 
     @cached_property
-    def BETA0(self):
+    def BETA0(self) -> float:
         return P0 / self.PB0  # Plasma Beta, ration plasma to magnetic pressure
-
-    @cached_property
-    def btemp(self) -> np.ndarray:
-        """
-        Returns background temperature in Kelvin by height following a hyperbolic tangent height
-        profile. From given photospheric and coronal temperatures T0 (temp at z0) and T1 are
-        calculated as coefficients for the hyperbolic tangent temperature profile. Current values:
-        T_PHOTOSPHERE = 5600.0 Kelvin
-        T_CORONA = 2.0 * 10.0**6 Kelvin
-
-        Returns:
-            np.ndarray: vertical background temperature profile
-        """
-
-        if self.z0 is None or self.deltaz is None:
-            raise ValueError(
-                "z0 and deltaz must not be None to compute background temperature."
-            )
-
-        T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(self.z0 / self.deltaz)) / (
-            1.0 + np.tanh(self.z0 / self.deltaz)
-        )
-        T1 = (T_CORONA - T_PHOTOSPHERE) / (1.0 + np.tanh(self.z0 / self.deltaz))
-
-        return T0 + T1 * np.tanh((self.z - self.z0) / self.deltaz)
-
-    @cached_property
-    def bpressure(self) -> np.ndarray:
-        """
-        Returns background pressure resulting from background temperature btemp.
-        Gives background pressure height profile normalised to 1 on the photosphere.
-        Need to multiply by BETA0 / 2.0 to normalise to same scale as dpressure. Need to
-        then multiply additionally by (B0 * 10**-4) ** 2.0 / MU0 to get into kg/(s^2m).
-
-        Returns:
-            np.ndarray: vertical background pressure profile
-        """
-
-        if self.z0 is None or self.deltaz is None:
-            raise ValueError(
-                "z0 and deltaz must not be None to compute background pressure."
-            )
-
-        T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(self.z0 / self.deltaz)) / (
-            1.0 + np.tanh(self.z0 / self.deltaz)
-        )  # in Kelvin
-        T1 = (T_CORONA - T_PHOTOSPHERE) / (
-            1.0 + np.tanh(self.z0 / self.deltaz)
-        )  # in Kelvin
-        H = KB * T0 / (MBAR * G_SOLAR) / L  # in m
-
-        q1 = self.deltaz / (2.0 * H * (1.0 + T1 / T0))
-        q2 = self.deltaz / (2.0 * H * (1.0 - T1 / T0))
-        q3 = self.deltaz * (T1 / T0) / (H * (1.0 - (T1 / T0) ** 2))
-
-        p1 = (
-            2.0
-            * np.exp(-2.0 * (self.z - self.z0) / self.deltaz)
-            / (1.0 + np.exp(-2.0 * (self.z - self.z0) / self.deltaz))
-            / (1.0 + np.tanh(self.z0 / self.deltaz))
-        )
-        p2 = (1.0 - np.tanh(self.z0 / self.deltaz)) / (
-            1.0 + np.tanh((self.z - self.z0) / self.deltaz)
-        )
-        p3 = (1.0 + T1 / T0 * np.tanh((self.z - self.z0) / self.deltaz)) / (
-            1.0 - T1 / T0 * np.tanh(self.z0 / self.deltaz)
-        )
-
-        return (p1**q1) * (p2**q2) * (p3**q3)
-
-    @cached_property
-    def bdensity(self) -> np.ndarray:
-        """
-        Returns background density resulting from background temperature btemp. Gives background
-        density height profile normalised to 1 on the photosphere. Need to multiply by
-        BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE to normalise to same scale as ddensity. Need to then
-        multiply additionally by (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L) to get into kg/(m^3).
-
-        Returns:
-            np.ndarray: vertical background density profile
-        """
-
-        if self.z0 is None or self.deltaz is None:
-            raise ValueError(
-                "z0 and deltaz must not be None to compute background density."
-            )
-
-        T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(self.z0 / self.deltaz)) / (
-            1.0 + np.tanh(self.z0 / self.deltaz)
-        )  # in Kelvin
-        T1 = (T_CORONA - T_PHOTOSPHERE) / (
-            1.0 + np.tanh(self.z0 / self.deltaz)
-        )  # in Kelvin
-
-        temp0 = T0 - T1 * np.tanh(self.z0 / self.deltaz)  # in Kelvin
-        dummypres = self.bpressure  # normalised
-        dummytemp = self.btemp / temp0  # normalised
-
-        return dummypres / dummytemp
 
     @cached_property
     def dpressure(self) -> np.ndarray:
@@ -369,51 +270,6 @@ class Field3dData:
         )
 
     @cached_property
-    def fpressure(self) -> np.ndarray:
-        """
-        Returns full pressure described by equation (14) in Neukirch and Wiegelmann (2019) in
-        normalised scale. Multiply by (B0 * 10**-4) ** 2.0 / MU0 to get into kg/(s^2m).
-
-        Returns:
-            np.ndarray: full 3D pressure, sum of background and variation
-        """
-
-        bp_matrix = np.zeros_like(self.dpressure)
-        bp_matrix[:, :, :] = self.bpressure
-
-        return (
-            self.BETA0 / 2.0 * bp_matrix + self.dpressure
-        )  # * (B0 * 10**-4) ** 2.0 / MU0
-
-    @cached_property
-    def fdensity(self) -> np.ndarray:
-        """
-        Returns full density described by equation (15) in Neukirch and Wiegelmann (2019) in
-        normalised scale. Multiply by (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L) to get
-        into kg/(m^3).
-
-        Returns:
-            np.ndarray: full 3D density, sum of background and variation
-        """
-
-        if self.z0 is None or self.deltaz is None or self.b is None:
-            raise ValueError(
-                "z0, deltaz, and b must not be None to compute full density."
-            )
-
-        T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(self.z0 / self.deltaz)) / (
-            1.0 + np.tanh(self.z0 / self.deltaz)
-        )
-        H = KB * T0 / (MBAR * G_SOLAR) / L
-
-        bd_matrix = np.zeros_like(self.ddensity)
-        bd_matrix[:, :, :] = self.bdensity
-
-        return (
-            self.BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bd_matrix + self.ddensity
-        )  #  *(B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L)
-
-    @cached_property
     def j3d(self) -> np.ndarray:
         """
         Calculate current density at all grid points. For details see function j3d below.
@@ -478,8 +334,8 @@ class Field3dData:
         return lf
 
 
-def calculate_magfield(
-    field2d: Field2dData,
+def extrapolate(
+    field2d: BoundaryData,
     alpha: float,
     a: float,
     which_solution: WhichSolution,
@@ -487,12 +343,12 @@ def calculate_magfield(
     z0: float | None = None,
     deltaz: float | None = None,
     kappa: float | None = None,
-) -> Field3dData:
+) -> ExtrapolationResult:
     """
-    Create Field3dData object from Field2dData object and choosen paramters using mhsxtrapy.b3d.b3d.
+    Create ExtrapolationResult object from BoundaryData object and choosen paramters using mhsxtrapy.b3d.b3d.
 
     Args:
-        field2d (Field2dData): boundary condition
+        field2d (BoundaryData): boundary condition
         alpha (float): force-free parameter
         a (float): amplitude parameter
         which_solution (WhichSolution): Enum to decide which solution to use, Low (1992), Neukirch and Wiegelmann (2019) or
@@ -503,12 +359,14 @@ def calculate_magfield(
         kappa (float | None, optional): Drop-off parameter for Low solution. Defaults to None.
 
     Returns:
-        Field3dData: Field3dData object
+        ExtrapolationResult: ExtrapolationResult object
     """
 
-    mf3d, dbz3d = b3d(field2d, alpha, a, which_solution, b, z0, deltaz, kappa)
+    mf3d, dbz3d = _extrapolate_3d(
+        field2d, alpha, a, which_solution, b, z0, deltaz, kappa
+    )
 
-    data = Field3dData(
+    data = ExtrapolationResult(
         nx=field2d.nx,
         ny=field2d.ny,
         nz=field2d.nz,
@@ -533,13 +391,13 @@ def calculate_magfield(
     return data
 
 
-# def j3d(field3d: Field3dData) -> np.ndarray:
+# def j3d(field3d: ExtrapolationResult) -> np.ndarray:
 #     """
 #     Returns current density, calucated from magnetic field as j = (alpha B + curl(0,0,f(z)Bz))/ mu0.
 #     In A/m^2.
 
 #     Args:
-#         field3d (Field3dData): magnetic field data
+#         field3d (ExtrapolationResult): magnetic field data
 
 #     Raises:
 #         ValueError: In case solution and parameter choices do not match
@@ -576,13 +434,13 @@ def calculate_magfield(
 #     return j / MU0 * L
 
 
-# def lf3d(field3d: Field3dData) -> np.ndarray:
+# def lf3d(field3d: ExtrapolationResult) -> np.ndarray:
 #     """
 #     Returns Lorentz force calculated from j x B.
 #     In kg/sm^2.
 
 #     Args:
-#         field3d (Field3dData): magnetic field data
+#         field3d (ExtrapolationResult): magnetic field data
 
 #     Returns:
 #         np.ndarray: 3D Lorentz force

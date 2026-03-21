@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from typing import Tuple
-
 import numpy as np
 from matplotlib import colormaps, colors, rc
 from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
-from mhsxtrapy.constants import LATEX_ON
-from mhsxtrapy.field3d import Field3dData
+from mhsxtrapy._constants import LATEX_ON
+from mhsxtrapy._field import ExtrapolationResult
 from mhsxtrapy.types import FluxBalanceState
 
 rc("text", usetex=LATEX_ON)
@@ -59,12 +57,12 @@ cmap_aia = colormaps["sdoaia171"]
 norm_hmi = colors.SymLogNorm(50, vmin=-7.5e2, vmax=7.5e2)
 
 
-def detect_footpoints(data: Field3dData) -> Tuple:
+def _detect_footpoints(data: ExtrapolationResult) -> tuple[np.ndarray, np.ndarray]:
     """
     Detenct footpoints around centres of poles on photospheric magentogram.
 
     Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
 
     Returns:
         Tuple: sink and source regions where footpoints will be plotted
@@ -82,7 +80,9 @@ def detect_footpoints(data: Field3dData) -> Tuple:
     return sinks, sources
 
 
-def calculate_tick_count(min_val, max_val, relative_size):
+def _calculate_tick_count(
+    min_val: float, max_val: float, relative_size: float
+) -> np.ndarray:
     """
     Calculate optimal tick spacing considering the relative size of this axis
     compared to the largest axis in the plot.
@@ -129,7 +129,9 @@ def calculate_tick_count(min_val, max_val, relative_size):
     return np.linspace(min_tick, max_tick, num_ticks)
 
 
-def set_axis_labels(ax, x_length, y_length, z_length):
+def _set_axis_labels(
+    ax: object, x_length: float, y_length: float, z_length: float
+) -> None:
     """
     Set axis labels with improved positioning for largely different axis lengths
 
@@ -172,7 +174,9 @@ def set_axis_labels(ax, x_length, y_length, z_length):
     ax.zaxis.label.set_rotation(0)
 
 
-def _get_coordinates(data: Field3dData) -> Tuple:
+def _get_coordinates(
+    data: ExtrapolationResult,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
     if data.flux_balance_state == FluxBalanceState.BALANCED:
         return data.x, data.y, data.z
@@ -184,7 +188,7 @@ def _get_coordinates(data: Field3dData) -> Tuple:
         return x_big, y_big, data.z
 
 
-def _make_boxedges(data):
+def _make_boxedges(data: ExtrapolationResult) -> np.ndarray:
 
     # Limit fieldline plot to original data size (rather than Seehafer size)
     boxedges = np.zeros((2, 3))
@@ -200,7 +204,9 @@ def _make_boxedges(data):
     return boxedges
 
 
-def find_center(data: Field3dData) -> Tuple:
+def _find_center(
+    data: ExtrapolationResult,
+) -> tuple[list[float], list[float], list[float], list[float]]:
     """
     Find centres of poles on photospheric magentogram.
     """
