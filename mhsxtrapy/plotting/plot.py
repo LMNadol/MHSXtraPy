@@ -24,11 +24,21 @@ from mhsxtrapy._constants import (
     L,
 )
 from mhsxtrapy._field import ExtrapolationResult
+from mhsxtrapy.types import FluxBalanceState
 
-from ._3d import plot_magnetogram_3D as plot_3D
-from ._pp import plot_ddensity_xy as plot_dd
-from ._pp import plot_dpressure_xy as plot_dp
-from ._utils import _detect_footpoints, _find_center, cmap_magneto, norm_hmi
+from ._3d import plot_fieldlines_AR, plot_fieldlines_grid
+from ._utils import (
+    _detect_footpoints,
+    _find_center,
+    _get_coordinates,
+    _set_axis_labels,
+    cmap_aia,
+    cmap_density,
+    cmap_magneto,
+    cmap_pressure,
+    norm_aia,
+    norm_hmi,
+)
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=LATEX_ON)
@@ -78,13 +88,7 @@ def plot_magnetogram(data: BoundaryData) -> None:
     )  # Adjust pad as necessary
     cbar.set_label(r"Gauss", fontsize=14)
 
-    # Ensure the 'figures' directory exists
-    if not os.path.exists("figures"):
-        os.makedirs("figures")
-
-    plotname = "figures/magnetogram-2D.png"
-    plt.savefig(plotname, dpi=300, bbox_inches="tight", pad_inches=0.5)
-    plt.show()
+    return fig, ax
 
 
 def plot_dpressure_z(data: ExtrapolationResult) -> None:
@@ -137,13 +141,7 @@ def plot_dpressure_z(data: ExtrapolationResult) -> None:
 
     ax.set_ylabel(r"$\Delta p$ [kg m$^{-1}$ s$^{-2}$]", size=14)
 
-    # Ensure the 'figures' directory exists
-    if not os.path.exists("figures"):
-        os.makedirs("figures")
-
-    plotname = "figures/dpressure_z.png"
-    plt.savefig(plotname, dpi=300, bbox_inches="tight", pad_inches=0.1)
-    plt.show()
+    return fig, ax
 
 
 def plot_ddensity_z(data: ExtrapolationResult) -> None:
@@ -193,13 +191,7 @@ def plot_ddensity_z(data: ExtrapolationResult) -> None:
 
     ax.set_ylabel(r"$\Delta \rho$ [kg m$^{-3}$]", size=14)
 
-    # Ensure the 'figures' directory exists
-    if not os.path.exists("figures"):
-        os.makedirs("figures")
-
-    plotname = "figures/ddensity_z.png"
-    plt.savefig(plotname, dpi=300, bbox_inches="tight", pad_inches=0.1)
-    plt.show()
+    return fig, ax
 
 
 def plot_field_3d(
@@ -213,53 +205,134 @@ def plot_field_3d(
     pixel_stride_y: int | None = DEFAULT_PIXEL_STRIDE,
 ):
     """
-    Wrapper function for 3D magentic field plotting.
+    Create figure of magnetic field line from ExtrapolationResult object. Specify angle of view and optional zoom
+    for the side view onto the transition region, which footpoints are chosen for field lines.
 
-        Args:
+    Args:
         data (ExtrapolationResult): magnetic field data
         view (Literal[&quot;los&quot;, &quot;side&quot;, &quot;angular&quot;]): which view should be displayed
         footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
+
+    Raises:
+        ValueError: In case view value is wrong
+        ValueError: In case footpoints value is wrong
     """
 
-    plot_3D(
-        data,
-        view,
-        footpoints,
-        boundary,
-        n_lines_x,
-        n_lines_y,
-        pixel_stride_x,
-        pixel_stride_y,
+    if boundary == "EUV":
+        if data.EUV is None:
+            raise ValueError("EUV selected as boundary, but no EUV image provided.")
+
+    xmin, xmax, ymin, ymax, zmin, zmax = (
+        data.x[0],
+        data.x[-1],
+        data.y[0],
+        data.y[-1],
+        data.z[0],
+        data.z[-1],
     )
 
+    x, y, z = _get_coordinates(data)
+    x_grid, y_grid = np.meshgrid(x, y)
 
-def plot_dpressure_xy(data: ExtrapolationResult, z: np.float64) -> None:
-    """
-    Wrapper function for 2D pressure variation plotting.
+    if data.flux_balance_state == FluxBalanceState.UNBALANCED:
+        x_grid = x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx]
+        y_grid = y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx]
 
-    Args:
-        data (ExtrapolationResult): magnetic field data
-        z (np.float64): height z at which variation is plotted
-    """
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
 
-    plot_dp(data, z)
+    if boundary == "EUV":
+        ax.contourf(
+            x_grid,
+            y_grid,
+            data.EUV,
+            1000,
+            cmap=cmap_aia,
+            norm=norm_aia,
+            offset=0.0,
+        )
+    else:
+        ax.contourf(
+            x_grid,
+            y_grid,
+            data.bz,
+            20,
+            cmap=cmap_magneto,
+            offset=0.0,
+        )
 
+    ax.set_xlabel(r"$x$ [Mm]", size=14)
+    ax.set_ylabel(r"$y$ [Mm]", size=14)
+    ax.set_zlabel(r"$z$ [Mm]", size=14)  # type: ignore
+    ax.grid(False)
+    ax.set_zlim(zmin, zmax)  # type: ignore
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
+    ax.set_box_aspect((xmax, ymax, zmax))  # type: ignore
 
-def plot_ddensity_xy(data: ExtrapolationResult, z: np.float64) -> None:
-    """
-    Wrapper function for 2D density variation plotting.
+    x_length = abs(xmax - xmin)
+    y_length = abs(ymax - ymin)
+    z_length = abs(zmax - zmin)
+    # max_length = max(x_length, y_length, z_length)
 
-    Args:
-        data (ExtrapolationResult): magnetic field data
-        z (np.float64): height z at which variation is plotted
-    """
+    # Set axis labels with dynamic positioning
+    _set_axis_labels(ax, x_length, y_length, z_length)
 
-    plot_dd(data, z)
+    if footpoints == "all":
+        plot_fieldlines_grid(data, ax, n_lines_x, n_lines_y)
+    elif footpoints == "active-regions":
+        sinks, sources = _detect_footpoints(data)
+        plot_fieldlines_AR(data, sinks, sources, ax, pixel_stride_x, pixel_stride_y)
+    else:
+        raise ValueError(
+            f"Invalid footpoints option: {footpoints}. Choose from 'all' or 'active-regions'."
+        )
+
+    if view == "los":
+        ax.view_init(90, -90)  # type: ignore
+        ax.set_zticklabels([])  # type: ignore
+        ax.set_zlabel("")  # type: ignore
+
+        [t.set_va("center") for t in ax.get_yticklabels()]  # type: ignore
+        [t.set_ha("center") for t in ax.get_yticklabels()]  # type: ignore
+
+        [t.set_va("center") for t in ax.get_xticklabels()]  # type: ignore
+        [t.set_ha("center") for t in ax.get_xticklabels()]  # type: ignore
+    elif view == "side":
+        ax.set_zticks(np.linspace(zmin, zmax, 5))
+        ax.view_init(0, -90)  # type: ignore
+        ax.set_yticklabels([])  # type: ignore
+        ax.set_ylabel("")
+
+        [t.set_va("top") for t in ax.get_xticklabels()]  # type: ignore
+        [t.set_ha("center") for t in ax.get_xticklabels()]  # type: ignore
+
+        [t.set_va("top") for t in ax.get_zticklabels()]  # type: ignore
+        [t.set_ha("center") for t in ax.get_zticklabels()]  # type: ignore
+
+    elif view == "angular":
+        ax.set_zticks(np.linspace(zmin, zmax, 5))
+        ax.view_init(30, 240, 0)  # type: ignore
+
+        [t.set_va("bottom") for t in ax.get_yticklabels()]  # type: ignore
+        [t.set_ha("right") for t in ax.get_yticklabels()]  # type: ignore
+
+        [t.set_va("bottom") for t in ax.get_xticklabels()]  # type: ignore
+        [t.set_ha("left") for t in ax.get_xticklabels()]  # type: ignore
+
+        [t.set_va("top") for t in ax.get_zticklabels()]  # type: ignore
+        [t.set_ha("center") for t in ax.get_zticklabels()]  # type: ignore
+    else:
+        raise ValueError(
+            f"Invalid view option: {view}. Choose from 'los', 'side', or 'angular'."
+        )
+
+    return fig, ax
 
 
 def show_poles(data: ExtrapolationResult):
     """
-    Show centres of poles on photospheric magentogram.
+    Show centres of poles on photospheric magnetogram.
     """
 
     x_plot = np.outer(data.y, np.ones(data.nx))
@@ -483,7 +556,7 @@ def find_corners_SDO(
     plotname = "figures/magnetogram-cutout.png"
     plt.savefig(plotname, dpi=300, bbox_inches="tight", pad_inches=0.5)
 
-    plt.show()
+    return fig, ax1, ax2
 
 
 def find_corners_SolarOrbiter(
@@ -528,4 +601,108 @@ def find_corners_SolarOrbiter(
 
     plt.tick_params(direction="in", length=2, width=0.5)
 
-    plt.show()
+    return fig, ax
+
+
+def plot_dpressure_xy(data: ExtrapolationResult, z: np.float64) -> None:
+    """
+    Plots 2D pressure variation array at height z.
+
+    Args:
+        data (ExtrapolationResult): magnetic fiel data
+        z (np.float64): vertical height
+    """
+
+    B0 = data.field[:, :, 0, 2].max()
+
+    x, y, z = _get_coordinates(data)
+    x_grid, y_grid = np.meshgrid(x, y)
+
+    if data.flux_balance_state == FluxBalanceState.UNBALANCED:
+        x_grid = x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx]
+        y_grid = y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx]
+
+    index = np.abs(data.z - z).argmin()
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    C = ax.contourf(
+        x_grid,
+        y_grid,
+        abs(data.dpressure[:, :, index]) * (B0 * 10**-4) ** 2.0 / MU0,
+        12,
+        cmap=cmap_pressure,
+    )
+    ax.set_xlabel(r"$x$ [Mm]", size=14)
+    ax.set_ylabel(r"$y$ [Mm]", size=14)
+    ax.set_box_aspect(data.y[-1] / data.x[-1])
+    ax.tick_params(direction="out", length=2, width=0.5)
+    ax_position = ax.get_position()  # (left, bottom, width, height)
+    # Calculate the fraction based on the axis width (can also use height if desired)
+    fraction = ax_position.height * 0.045
+
+    # Create colorbar and adjust its size dynamically based on the plot size
+    cbar = fig.colorbar(
+        C, ax=ax, fraction=fraction, pad=0.04
+    )  # Adjust pad as necessary
+    cbar.set_label(r"kg m$^{-1}$ s$^{-2}$", fontsize=14)
+    plt.title(
+        r"$|\Delta p|$ at $z = $ " + str(round(data.z[index], 2)) + " [Mm]", size=14
+    )
+    # Ensure the 'figures' directory exists
+    if not os.path.exists("figures"):
+        os.makedirs("figures")
+
+    return fig, ax
+
+
+def plot_ddensity_xy(data: ExtrapolationResult, z: np.float64) -> None:
+    """
+    Plots 2D density variation array at height z.
+
+    Args:
+        data (ExtrapolationResult): magnetic fiel data
+        z (np.float64): vertical height
+    """
+
+    B0 = data.field[:, :, 0, 2].max()
+
+    x, y, z = _get_coordinates(data)
+    x_grid, y_grid = np.meshgrid(x, y)
+
+    if data.flux_balance_state == FluxBalanceState.UNBALANCED:
+        x_grid = x_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx]
+        y_grid = y_grid[data.ny : 2 * data.ny, data.nx : 2 * data.nx]
+
+    index = np.abs(data.z - z).argmin()
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    C = ax.contourf(
+        x_grid,
+        y_grid,
+        abs(data.ddensity[:, :, index]) * (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L),
+        12,
+        cmap=cmap_density,
+    )
+    ax.set_xlabel(r"$x$ [Mm]", size=14)
+    ax.set_ylabel(r"$y$ [Mm]", size=14)
+    ax.set_box_aspect(data.y[-1] / data.x[-1])
+    ax.tick_params(direction="out", length=2, width=0.5)
+    ax_position = ax.get_position()  # (left, bottom, width, height)
+    # Calculate the fraction based on the axis width (can also use height if desired)
+    fraction = ax_position.height * 0.045
+
+    # Create colorbar and adjust its size dynamically based on the plot size
+    cbar = fig.colorbar(
+        C, ax=ax, fraction=fraction, pad=0.04
+    )  # Adjust pad as necessary
+    cbar.set_label(r"kg m$^{-3}$", fontsize=14)
+    plt.title(
+        r"$|\Delta \rho|$ at $z =$" + str(round(data.z[index], 2)) + " [Mm]", size=14
+    )
+    # Ensure the 'figures' directory exists
+    if not os.path.exists("figures"):
+        os.makedirs("figures")
+
+    return fig, ax
