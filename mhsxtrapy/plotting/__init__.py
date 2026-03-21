@@ -6,14 +6,14 @@ from ._plot import (
     find_corners_SolarOrbiter,
     plot_ddensity_z,
     plot_dpressure_z,
-    plot_magnetogram_2D,
+    plot_magnetogram,
     show_footpoints,
     show_poles,
 )
 from ._pp import plot_ddensity_xy, plot_dpressure_xy
 
 __all__: list[str] = [
-    "plot_magnetogram_2D",
+    "plot_magnetogram",
     "plot_dpressure_z",
     "plot_ddensity_z",
     "plot_magnetogram_3D",

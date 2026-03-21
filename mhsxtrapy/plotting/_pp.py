@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib import rc
 
 from mhsxtrapy._constants import G_SOLAR, LATEX_ON, MU0, L
-from mhsxtrapy._field import Field3dData
+from mhsxtrapy._field import ExtrapolationResult
 from mhsxtrapy.types import FluxBalanceState
 
 from ._utils import _get_coordinates, cmap_density, cmap_pressure
@@ -17,12 +17,12 @@ rc("text", usetex=LATEX_ON)
 # TO DO `_pp.py` plotting functions unconditionally create `figures/` directories and save files. Make saving optional — return the figure and let callers decide. Add an optional `save_path` parameter.
 
 
-def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
+def plot_dpressure_xy(data: ExtrapolationResult, z: np.float64) -> None:
     """
     Plots 2D pressure variation array at height z.
 
     Args:
-        data (Field3dData): magnetic fiel data
+        data (ExtrapolationResult): magnetic fiel data
         z (np.float64): vertical height
     """
 
@@ -72,12 +72,12 @@ def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
     plt.show()
 
 
-def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
+def plot_ddensity_xy(data: ExtrapolationResult, z: np.float64) -> None:
     """
     Plots 2D density variation array at height z.
 
     Args:
-        data (Field3dData): magnetic fiel data
+        data (ExtrapolationResult): magnetic fiel data
         z (np.float64): vertical height
     """
 

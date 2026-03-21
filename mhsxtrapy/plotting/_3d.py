@@ -9,18 +9,18 @@ import numpy as np
 from matplotlib import rc
 
 from mhsxtrapy._constants import DEFAULT_N_LINES, DEFAULT_PIXEL_STRIDE, LATEX_ON
-from mhsxtrapy._field import Field3dData
+from mhsxtrapy._field import ExtrapolationResult
 from mhsxtrapy.plotting._fieldline3d import fieldline3d
 from mhsxtrapy.types import FluxBalanceState
 
 from ._utils import (
+    _detect_footpoints,
     _get_coordinates,
     _make_boxedges,
+    _set_axis_labels,
     cmap_aia,
     cmap_magneto,
-    detect_footpoints,
     norm_aia,
-    set_axis_labels,
 )
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
@@ -28,7 +28,7 @@ rc("text", usetex=LATEX_ON)
 
 
 def plot_magnetogram_3D(
-    data: Field3dData,
+    data: ExtrapolationResult,
     view: Literal["los", "side", "angular"],
     footpoints: Literal["all", "active-regions"],
     boundary: Literal["FeI-6173", "EUV"] = "FeI-6173",
@@ -38,11 +38,11 @@ def plot_magnetogram_3D(
     pixel_stride_y: int | None = DEFAULT_PIXEL_STRIDE,
 ):
     """
-    Create figure of magnetic field line from Field3dData object. Specify angle of view and optional zoom
+    Create figure of magnetic field line from ExtrapolationResult object. Specify angle of view and optional zoom
     for the side view onto the transition region, which footpoints are chosen for field lines.
 
     Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
         view (Literal[&quot;los&quot;, &quot;side&quot;, &quot;angular&quot;]): which view should be displayed
         footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
 
@@ -109,12 +109,12 @@ def plot_magnetogram_3D(
     # max_length = max(x_length, y_length, z_length)
 
     # Set axis labels with dynamic positioning
-    set_axis_labels(ax, x_length, y_length, z_length)
+    _set_axis_labels(ax, x_length, y_length, z_length)
 
     if footpoints == "all":
         plot_fieldlines_grid(data, ax, n_lines_x, n_lines_y)
     elif footpoints == "active-regions":
-        sinks, sources = detect_footpoints(data)
+        sinks, sources = _detect_footpoints(data)
         plot_fieldlines_AR(data, sinks, sources, ax, pixel_stride_x, pixel_stride_y)
     else:
         raise ValueError(
@@ -172,12 +172,12 @@ def plot_magnetogram_3D(
     plt.show()
 
 
-def plot_fieldlines_grid(data: Field3dData, ax, n_lines_x, n_lines_y) -> None:
+def plot_fieldlines_grid(data: ExtrapolationResult, ax, n_lines_x, n_lines_y) -> None:
     """
     Plot field lines on grid.
 
     Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
         ax (_type_): previous plotting environment
     """
 
@@ -266,7 +266,7 @@ def plot_fieldlines_grid(data: Field3dData, ax, n_lines_x, n_lines_y) -> None:
 
 
 def plot_fieldlines_AR(
-    data: Field3dData,
+    data: ExtrapolationResult,
     sinks: np.ndarray,
     sources: np.ndarray,
     ax,
@@ -277,7 +277,7 @@ def plot_fieldlines_AR(
     Plot field lines starting at detected foot points around poles.
 
     Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
         sinks (np.ndarray): regions of negative flux
         sources (np.ndarray): regions of positive flux
         ax (_type_): previous plotting environment

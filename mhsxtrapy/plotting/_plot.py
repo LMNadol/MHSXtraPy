@@ -14,7 +14,7 @@ from matplotlib import rc, ticker
 from matplotlib.patches import ConnectionPatch, Rectangle
 from scipy.interpolate import interp1d
 
-from mhsxtrapy._boundary import Field2dData
+from mhsxtrapy._boundary import BoundaryData
 from mhsxtrapy._constants import (
     DEFAULT_N_LINES,
     DEFAULT_PIXEL_STRIDE,
@@ -23,23 +23,23 @@ from mhsxtrapy._constants import (
     MU0,
     L,
 )
-from mhsxtrapy._field import Field3dData
+from mhsxtrapy._field import ExtrapolationResult
 
 from ._3d import plot_magnetogram_3D as plot_3D
 from ._pp import plot_ddensity_xy as plot_dd
 from ._pp import plot_dpressure_xy as plot_dp
-from ._utils import cmap_magneto, detect_footpoints, find_center, norm_hmi
+from ._utils import _detect_footpoints, _find_center, cmap_magneto, norm_hmi
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=LATEX_ON)
 
 
-def plot_magnetogram_2D(data: Field2dData) -> None:
+def plot_magnetogram(data: BoundaryData) -> None:
     """
     Plot photospheric boundary condition as basis for field line figures.
 
     Args:
-        data (Field2dData): boundary condition data
+        data (BoundaryData): boundary condition data
     """
 
     fig = plt.figure()
@@ -87,12 +87,12 @@ def plot_magnetogram_2D(data: Field2dData) -> None:
     plt.show()
 
 
-def plot_dpressure_z(data: Field3dData) -> None:
+def plot_dpressure_z(data: ExtrapolationResult) -> None:
     """
     Plots vertical variation in pressure at x and y where Bz is maximal on the photosphere.
 
     Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
     """
 
     B0 = data.field[:, :, 0, 2].max()
@@ -146,12 +146,12 @@ def plot_dpressure_z(data: Field3dData) -> None:
     plt.show()
 
 
-def plot_ddensity_z(data: Field3dData) -> None:
+def plot_ddensity_z(data: ExtrapolationResult) -> None:
     """
     Plots vertical variation in density at x and y where Bz is maximal on the photosphere.
 
     Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
     """
 
     B0 = data.field[:, :, 0, 2].max()
@@ -202,8 +202,8 @@ def plot_ddensity_z(data: Field3dData) -> None:
     plt.show()
 
 
-def plot_magnetogram_3D(
-    data: Field3dData,
+def plot_field_3d(
+    data: ExtrapolationResult,
     view: Literal["los", "side", "angular"],
     footpoints: Literal["all", "active-regions"],
     boundary: Literal["FeI-6173", "EUV"] = "FeI-6173",
@@ -216,7 +216,7 @@ def plot_magnetogram_3D(
     Wrapper function for 3D magentic field plotting.
 
         Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
         view (Literal[&quot;los&quot;, &quot;side&quot;, &quot;angular&quot;]): which view should be displayed
         footpoints (Literal[&quot;all&quot;, &quot;active): which footpoints should be used
     """
@@ -233,31 +233,31 @@ def plot_magnetogram_3D(
     )
 
 
-def plot_dpressure_xy(data: Field3dData, z: np.float64) -> None:
+def plot_dpressure_xy(data: ExtrapolationResult, z: np.float64) -> None:
     """
     Wrapper function for 2D pressure variation plotting.
 
     Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
         z (np.float64): height z at which variation is plotted
     """
 
     plot_dp(data, z)
 
 
-def plot_ddensity_xy(data: Field3dData, z: np.float64) -> None:
+def plot_ddensity_xy(data: ExtrapolationResult, z: np.float64) -> None:
     """
     Wrapper function for 2D density variation plotting.
 
     Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
         z (np.float64): height z at which variation is plotted
     """
 
     plot_dd(data, z)
 
 
-def show_poles(data: Field3dData):
+def show_poles(data: ExtrapolationResult):
     """
     Show centres of poles on photospheric magentogram.
     """
@@ -274,7 +274,7 @@ def show_poles(data: Field3dData):
         data.z[-1],
     )
 
-    x_sources, y_sources, x_sinks, y_sinks = find_center(data)
+    x_sources, y_sources, x_sinks, y_sinks = _find_center(data)
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -309,12 +309,12 @@ def show_poles(data: Field3dData):
     plt.show()
 
 
-def show_footpoints(data: Field3dData) -> None:
+def show_footpoints(data: ExtrapolationResult) -> None:
     """
     Show footpoints around centres of poles on photospheric magentogram.
     """
 
-    sinks, sources = detect_footpoints(data)
+    sinks, sources = _detect_footpoints(data)
 
     _, xmax, _, ymax, _, _ = (
         data.x[0],

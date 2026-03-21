@@ -7,7 +7,7 @@ from matplotlib import colormaps, colors, rc
 from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
 from mhsxtrapy._constants import LATEX_ON
-from mhsxtrapy._field import Field3dData
+from mhsxtrapy._field import ExtrapolationResult
 from mhsxtrapy.types import FluxBalanceState
 
 rc("text", usetex=LATEX_ON)
@@ -59,12 +59,12 @@ cmap_aia = colormaps["sdoaia171"]
 norm_hmi = colors.SymLogNorm(50, vmin=-7.5e2, vmax=7.5e2)
 
 
-def detect_footpoints(data: Field3dData) -> Tuple:
+def _detect_footpoints(data: ExtrapolationResult) -> Tuple:
     """
     Detenct footpoints around centres of poles on photospheric magentogram.
 
     Args:
-        data (Field3dData): magnetic field data
+        data (ExtrapolationResult): magnetic field data
 
     Returns:
         Tuple: sink and source regions where footpoints will be plotted
@@ -82,7 +82,7 @@ def detect_footpoints(data: Field3dData) -> Tuple:
     return sinks, sources
 
 
-def calculate_tick_count(min_val, max_val, relative_size):
+def _calculate_tick_count(min_val, max_val, relative_size):
     """
     Calculate optimal tick spacing considering the relative size of this axis
     compared to the largest axis in the plot.
@@ -129,7 +129,7 @@ def calculate_tick_count(min_val, max_val, relative_size):
     return np.linspace(min_tick, max_tick, num_ticks)
 
 
-def set_axis_labels(ax, x_length, y_length, z_length):
+def _set_axis_labels(ax, x_length, y_length, z_length):
     """
     Set axis labels with improved positioning for largely different axis lengths
 
@@ -172,7 +172,7 @@ def set_axis_labels(ax, x_length, y_length, z_length):
     ax.zaxis.label.set_rotation(0)
 
 
-def _get_coordinates(data: Field3dData) -> Tuple:
+def _get_coordinates(data: ExtrapolationResult) -> Tuple:
 
     if data.flux_balance_state == FluxBalanceState.BALANCED:
         return data.x, data.y, data.z
@@ -200,7 +200,7 @@ def _make_boxedges(data):
     return boxedges
 
 
-def find_center(data: Field3dData) -> Tuple:
+def _find_center(data: ExtrapolationResult) -> Tuple:
     """
     Find centres of poles on photospheric magentogram.
     """

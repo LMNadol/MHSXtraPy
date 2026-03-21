@@ -7,7 +7,7 @@ from ._base import BaseSolution
 from ._neukirch_wiegelmann import dfdz_nw, f_nw
 
 
-class NaNeuSolution(BaseSolution):
+class NadolNeukirchSolution(BaseSolution):
 
     def __init__(self, z0: float, deltaz: float, a: float, b: float):
         self.z0 = z0

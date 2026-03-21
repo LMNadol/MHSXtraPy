@@ -21,19 +21,19 @@ from mhsxtrapy._constants import (
 from mhsxtrapy.types import FluxBalanceState, Instrument
 
 __all__ = [
-    "Field2dData",
-    "check_fluxbalance",
+    "BoundaryData",
+    "is_flux_balanced",
     "alpha_HS04",
-    "maximal_a",
+    "max_a_parameter",
 ]
 
 # TO DO `px`, `py`, `pz` could be confused with momentum. `dx`, `dy`, `dz` is the standard convention for grid spacing in computational physics. Alternatively, `pixel_x`, `pixel_y`, `pixel_z`.
 
 
 @dataclass
-class Field2dData:
+class BoundaryData:
     """
-    Dataclass of type Field2dData with the following attributes:
+    Dataclass of type BoundaryData with the following attributes:
     nx, ny, nz  :   Dimensions of 3D magnetic field, usually nx and ny determined by magnetogram size,
                     while nz defined by user through height to which extrapolation is carried out.
     nf          :   Number of Fourier modes used in calculation of magnetic field vector, usually
@@ -52,7 +52,7 @@ class Field2dData:
                     such that, following intuition, x-direction corresponds to latitudinal extension and
                     y-direction to longitudinal extension of the magnetic field. y-component.
     Returns:
-        _type_: Field2dData object
+        _type_: BoundaryData object
     """
 
     nx: int
@@ -76,7 +76,7 @@ class Field2dData:
     def __repr__(self) -> str:
         euv_info = f", EUV={self.EUV.shape}" if self.EUV is not None else ""
         return (
-            f"Field2dData(nx={self.nx}, ny={self.ny}, nz={self.nz}, nf={self.nf}, "
+            f"BoundaryData(nx={self.nx}, ny={self.ny}, nz={self.nz}, nf={self.nf}, "
             f"px={self.px}, py={self.py}, pz={self.pz}, "
             f"bz={self.bz.shape}, flux_balance={self.flux_balance_state.value}{euv_info})"
         )
@@ -95,12 +95,12 @@ class Field2dData:
         y_arr = np.arange(ny, dtype=np.float64) * py
         z_arr = np.arange(nz, dtype=np.float64) * pz
 
-        if check_fluxbalance(bz):
+        if is_flux_balanced(bz):
             fb_state = FluxBalanceState.BALANCED
         else:
             fb_state = FluxBalanceState.UNBALANCED
 
-        return Field2dData(
+        return BoundaryData(
             nx,
             ny,
             nz,
@@ -179,8 +179,8 @@ class Field2dData:
         y = np.arange(ny, dtype=np.float64) * py
         z = np.arange(nz, dtype=np.float64) * pz
 
-        if check_fluxbalance(image):
-            data2d = Field2dData(
+        if is_flux_balanced(image):
+            data2d = BoundaryData(
                 nx,
                 ny,
                 nz,
@@ -195,7 +195,7 @@ class Field2dData:
                 flux_balance_state=FluxBalanceState.BALANCED,
             )
         else:
-            data2d = Field2dData(
+            data2d = BoundaryData(
                 nx,
                 ny,
                 nz,
@@ -215,14 +215,14 @@ class Field2dData:
             aia_image_small = aia_image.submap(
                 left_corner, top_right=right_corner
             ).rotate()
-            aia_image_resize = resize_aia(data2d, aia_image_small)
+            aia_image_resize = _resize_aia(data2d, aia_image_small)
 
             data2d.EUV = aia_image_resize
 
         return data2d
 
 
-def check_fluxbalance(bz: np.ndarray) -> bool:
+def is_flux_balanced(bz: np.ndarray) -> bool:
     """
     Summation of flux through the bottom boundary (photospheric Bz) normalised
     by the sum of absolute values. Value between -1 and 1, corresponding to entirely
@@ -234,12 +234,12 @@ def check_fluxbalance(bz: np.ndarray) -> bool:
         bz (np.ndarray): 2D photospheric vertical magnetogram of size (ny, nx,)
 
     Returns:
-        float: summation of flux through bz
+        bool: True if flux is balanced, False otherwise
     """
     return np.fabs(np.sum(bz) / np.sum(np.fabs(bz))) < FLUX_BALANCE_THRESHOLD
 
 
-def alpha_HS04(field: Field2dData) -> float:
+def alpha_HS04(field: BoundaryData) -> float:
     # def alpha_HS04(bx: np.ndarray, by: np.ndarray, bz: np.ndarray) -> float:
     """
     "Optimal" alpha calculated according to Hagino and Sakurai (2004).
@@ -256,15 +256,15 @@ def alpha_HS04(field: Field2dData) -> float:
     """
     if field.bx is None or field.by is None:
         raise ValueError(
-            "bx and by must be provided in Field2dData to calculate alpha_HS04."
+            "bx and by must be provided in BoundaryData to calculate alpha_HS04."
         )
 
     Jz = np.gradient(field.by, axis=1) - np.gradient(field.bx, axis=0)
     return np.sum(Jz * np.sign(field.bz)) / np.sum(np.fabs(field.bz))
 
 
-def maximal_a(field: Field2dData, alpha: float, b: float) -> float:
-    from mhsxtrapy._extrapolation import compute_wavenumbers
+def max_a_parameter(field: BoundaryData, alpha: float, b: float) -> float:
+    from mhsxtrapy._fourier import _compute_wavenumbers
 
     if field.flux_balance_state == FluxBalanceState.BALANCED:
         lengthscale = 1.0
@@ -282,7 +282,7 @@ def maximal_a(field: Field2dData, alpha: float, b: float) -> float:
     lxn = lx / lengthscale
     lyn = ly / lengthscale
 
-    kx, ky, k2 = compute_wavenumbers(
+    kx, ky, k2 = _compute_wavenumbers(
         field.nx, field.ny, field.px, field.py, nf, field.flux_balance_state, lxn, lyn
     )
 
@@ -306,7 +306,7 @@ def maximal_a(field: Field2dData, alpha: float, b: float) -> float:
     return a_max
 
 
-def resize_aia(data: Field2dData, aia_image: AIAMap) -> np.ndarray:
+def _resize_aia(data: BoundaryData, aia_image: AIAMap) -> np.ndarray:
     nx = aia_image.data.shape[1]  # type: ignore
     ny = aia_image.data.shape[0]  # type: ignore
 

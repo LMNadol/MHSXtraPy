@@ -1,5 +1,5 @@
-from mhsxtrapy._field import calculate_magfield
+from mhsxtrapy._field import _extrapolate_3d
 
 __all__ = [
-    "calculate_magfield",
+    "_extrapolate_3d",
 ]
