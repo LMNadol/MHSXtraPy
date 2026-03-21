@@ -61,7 +61,6 @@ htmlcov/
 .ipynb_checkpoints/
 example-back-atmo.ipynb
 test.ipynb
-test-runtime-performance.ipynb
 
 # ==========================
 # Data / generated output
@@ -76,6 +75,7 @@ test-files/
 *.pdf
 *.pkl
 *.png
+results/
 
 # ==========================
 # Logs
