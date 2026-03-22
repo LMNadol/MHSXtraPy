@@ -61,6 +61,7 @@ htmlcov/
 .ipynb_checkpoints/
 example-back-atmo.ipynb
 test.ipynb
+logo.ipynb
 
 # ==========================
 # Data / generated output
