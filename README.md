@@ -111,7 +111,9 @@ The test suite uses [pytest](https://docs.pytest.org/) and lives in `tests/`. In
 
 ```bash
 pip install -e ".[test]"
-pytest
+python -m pytest tests/test_boundary.py -v
+python -m pytest tests/test_fourier.py -v
+python -m pytest tests/test_solutions.py -v
 ```
 
 To run the benchmark suite:
