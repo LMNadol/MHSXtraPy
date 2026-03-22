@@ -76,6 +76,7 @@ test-files/
 *.pdf
 *.pkl
 *.png
+!MHSXtraPy-4.png
 results/
 
 # ==========================
