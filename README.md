@@ -20,7 +20,7 @@ MHSXtraPy solves the linear MHS equations in Cartesian geometry using Fourier de
 
 ## Installation
 
-Requires **Python ≥ 3.14**.
+I am using **Python ≥ 3.14**.
 
 Install from source (development mode):
 
