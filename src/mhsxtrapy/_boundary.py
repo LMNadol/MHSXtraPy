@@ -20,7 +20,8 @@ from mhsxtrapy.constants import (
 )
 from mhsxtrapy.types import FluxBalanceState, Instrument
 
-# TO DO `px`, `py`, `pz` could be confused with momentum. `dx`, `dy`, `dz` is the standard convention for grid spacing in computational physics. Alternatively, `pixel_x`, `pixel_y`, `pixel_z`.
+# TO DO `px`, `py`, `pz` could be confused with momentum. `dx`, `dy`, `dz` is the standard convention for grid spacing
+# in computational physics. Alternatively, `pixel_x`, `pixel_y`, `pixel_z`.
 
 __all__ = []
 

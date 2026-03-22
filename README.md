@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="MHSXtraPy-4.png" alt="MHSXtraPy logo" width="400">
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="../mhsxtrapy/assets/MHSXtraPy-5.png" width="400">
+    <source media="(prefers-color-scheme: dark)" srcset="../mhsxtrapy/assets/MHSXtraPy-6.png" width="400">
+    <img src="../mhsxtrapy/assets/MHSXtraPy-5.png" alt="MHSXtraPy logo" width="400">
+  </picture>
 </p>
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
