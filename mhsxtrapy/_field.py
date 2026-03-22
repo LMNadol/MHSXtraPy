@@ -8,7 +8,7 @@ from functools import cached_property
 import h5py
 import numpy as np
 
-from mhsxtrapy._boundary import BoundaryData, FluxBalanceState
+from mhsxtrapy._boundary import BoundaryData, FluxBalanceState, max_a_parameter
 from mhsxtrapy._extrapolation import WhichSolution, _extrapolate_3d
 from mhsxtrapy.constants import MU0, P0, L
 from mhsxtrapy.solutions import get_solution
@@ -361,6 +361,26 @@ def extrapolate(
     Returns:
         ExtrapolationResult: ExtrapolationResult object
     """
+
+    if a is None or alpha is None:
+        raise ValueError("Parameters a and alpha must be provided.")
+    if which_solution in [WhichSolution.NW, WhichSolution.NN] and (
+        b is None or z0 is None or deltaz is None
+    ):
+        raise ValueError(
+            f"Parameters b, z0 and deltaz must be provided for solution {which_solution.value}."
+        )
+    if which_solution == WhichSolution.LOW and kappa is None:
+        raise ValueError(
+            f"Parameter kappa must be provided for solution {which_solution.value}."
+        )
+    if which_solution in [WhichSolution.NW, WhichSolution.NN] and a > max_a_parameter(
+        field2d, alpha, b
+    ):
+        raise ValueError(
+            f"Parameter a={a} is too large for the given boundary condition and solution choice. "
+            f"Maximum allowed value is {max_a_parameter(field2d, alpha, b)}."
+        )
 
     mf3d, dbz3d = _extrapolate_3d(
         field2d, alpha, a, which_solution, b, z0, deltaz, kappa
