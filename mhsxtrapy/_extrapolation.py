@@ -16,6 +16,8 @@ from mhsxtrapy.types import WhichSolution
 
 logger = logging.getLogger(__name__)
 
+__all__ = []
+
 
 @dataclass
 class MagneticField:

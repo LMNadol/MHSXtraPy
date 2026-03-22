@@ -6,6 +6,8 @@ from numba import njit
 from ._base import BaseSolution
 from ._neukirch_wiegelmann import dfdz_nw, f_nw
 
+__all__ = []
+
 
 class NadolNeukirchSolution(BaseSolution):
 

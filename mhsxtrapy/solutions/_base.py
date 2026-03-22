@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
+__all__ = []
+
 
 class BaseSolution(ABC):
 

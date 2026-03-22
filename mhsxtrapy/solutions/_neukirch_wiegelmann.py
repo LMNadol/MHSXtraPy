@@ -5,6 +5,8 @@ from scipy.special import hyp2f1
 
 from ._base import BaseSolution
 
+__all__ = []
+
 
 class NeukirchWiegelmannSolution(BaseSolution):
 

@@ -9,17 +9,15 @@ import h5py
 import numpy as np
 
 from mhsxtrapy._boundary import BoundaryData, FluxBalanceState
-from mhsxtrapy._constants import MU0, P0, L
 from mhsxtrapy._extrapolation import WhichSolution, _extrapolate_3d
+from mhsxtrapy.constants import MU0, P0, L
 from mhsxtrapy.solutions import get_solution
-
-__all__ = [
-    "ExtrapolationResult",
-]
 
 # TO DO The `field` array stores components as `[By, Bx, Bz]` (indices 0, 1, 2). This is non-standard and error-prone. Either:
 # - **(a)** Add named constants: `BY_IDX, BX_IDX, BZ_IDX = 0, 1, 2` and use throughout, or
 # - **(b)** Add an accessor: `field3d.bx`, `field3d.by`, `field3d.bz_3d` properties that slice the array.
+
+__all__ = []
 
 
 @dataclass
