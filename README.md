@@ -104,3 +104,18 @@ Example Jupyter notebooks are provided in [`notebooks/`](notebooks/):
 - `plot_dpressure_xy(result)` / `plot_ddensity_xy(result)` — horizontal slices
 
 All plotting functions are importable from `mhsxtrapy.plotting`.
+
+## Tests
+
+The test suite uses [pytest](https://docs.pytest.org/) and lives in `tests/`. Install the test dependencies and run:
+
+```bash
+pip install -e ".[test]"
+pytest
+```
+
+To run the benchmark suite:
+
+```bash
+pytest tests/test_benchmarks.py --benchmark-only
+```
