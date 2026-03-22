@@ -13,7 +13,8 @@ from mhsxtrapy._extrapolation import WhichSolution, _extrapolate_3d
 from mhsxtrapy.constants import MU0, P0, L
 from mhsxtrapy.solutions import get_solution
 
-# TO DO The `field` array stores components as `[By, Bx, Bz]` (indices 0, 1, 2). This is non-standard and error-prone. Either:
+# TO DO The `field` array stores components as `[By, Bx, Bz]` (indices 0, 1, 2). This is non-standard and error-prone.
+# Either:
 # - **(a)** Add named constants: `BY_IDX, BX_IDX, BZ_IDX = 0, 1, 2` and use throughout, or
 # - **(b)** Add an accessor: `field3d.bx`, `field3d.by`, `field3d.bz_3d` properties that slice the array.
 
@@ -351,11 +352,13 @@ def extrapolate(
         field2d (BoundaryData): boundary condition
         alpha (float): force-free parameter
         a (float): amplitude parameter
-        which_solution (WhichSolution): Enum to decide which solution to use, Low (1992), Neukirch and Wiegelmann (2019) or
-            Nadol and Neukirch (2025)
+        which_solution (WhichSolution): Enum to decide which solution to use, Low (1992),
+        Neukirch and Wiegelmann (2019) or Nadol and Neukirch (2025)
         b (float | None, optional): Switch-off parameter for NW and NN solution. Defaults to None.
-        z0 (float | None, optional): Centre of region over which transition from non-force-free to force-free takes place. Defaults to None.
-        deltaz (float | None, optional): Width of region over which transition from non-force-free to force-free takes place. Defaults to None.
+        z0 (float | None, optional): Centre of region over which transition from non-force-free to
+        force-free takes place. Defaults to None.
+        deltaz (float | None, optional): Width of region over which transition from non-force-free to
+        force-free takes place. Defaults to None.
         kappa (float | None, optional): Drop-off parameter for Low solution. Defaults to None.
 
     Returns:
@@ -364,9 +367,10 @@ def extrapolate(
 
     if a is None or alpha is None:
         raise ValueError("Parameters a and alpha must be provided.")
-    if which_solution in [WhichSolution.NW, WhichSolution.NN] and (
-        b is None or z0 is None or deltaz is None
-    ):
+    if which_solution in [
+        WhichSolution.NEUKIRCH_WIEGELMANN,
+        WhichSolution.NADOL_NEUKIRCH,
+    ] and (b is None or z0 is None or deltaz is None):
         raise ValueError(
             f"Parameters b, z0 and deltaz must be provided for solution {which_solution.value}."
         )
@@ -374,9 +378,10 @@ def extrapolate(
         raise ValueError(
             f"Parameter kappa must be provided for solution {which_solution.value}."
         )
-    if which_solution in [WhichSolution.NW, WhichSolution.NN] and a > max_a_parameter(
-        field2d, alpha, b
-    ):
+    if which_solution in [
+        WhichSolution.NEUKIRCH_WIEGELMANN,
+        WhichSolution.NADOL_NEUKIRCH,
+    ] and a > max_a_parameter(field2d, alpha, b):
         raise ValueError(
             f"Parameter a={a} is too large for the given boundary condition and solution choice. "
             f"Maximum allowed value is {max_a_parameter(field2d, alpha, b)}."

@@ -33,11 +33,9 @@ pip install -e ".[dev,test]"
 ```python
 import numpy as np
 
-from mhsxtrapy.types import WhichSolution
+import mhsxtrapy
 from mhsxtrapy.examples import multipole
-from mhsxtrapy._boundary import BoundaryData
-from mhsxtrapy._field import extrapolate
-from mhsxtrapy.plotting import plot_magnetogram, plot_field_3d
+from mhsxtrapy.plotting import plot_field_3d
 
 # 1. Create a boundary condition from an analytical multipole
 nx, ny = 200, 200
@@ -45,22 +43,15 @@ x = np.linspace(0.0, 2.0, nx)
 y = np.linspace(0.0, 2.0, ny)
 bz = np.array([[multipole(xi, yi) for xi in x] for yi in y])
 
-data2d = BoundaryData.from_array(bz, pixel_size=0.1, nz=400, pz=0.05)
+data2d = mhsxtrapy.BoundaryData.from_array(bz, pixel_size=0.1, nz=400, pz=0.05)
 
 # 2. Extrapolate
-result = extrapolate(
-    data2d,
-    alpha=0.05,
-    a=0.22,
-    which_solution=WhichSolution.NADOL_NEUKIRCH,
-    b=1.0,
-    z0=2.0,
-    deltaz=0.2,
-)
+result = mhsxtrapy.extrapolate(data2d, alpha=0.1, a=0.05, which_solution=mhsxtrapy.WhichSolution.LOW, kappa=1.0)
+
 
 # 3. Visualise
 plot_magnetogram(data2d)
-plot_field_3d(result, view="side", footpoints="active-regions")
+plot_field_3d(result, view="los", footpoints="active-regions", pixel_stride_x=10, pixel_stride_y=10)
 
 # 4. Save for later
 result.save("results/")
