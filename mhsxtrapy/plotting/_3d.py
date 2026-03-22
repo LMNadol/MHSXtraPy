@@ -5,14 +5,16 @@ import math
 import numpy as np
 from matplotlib import rc
 
-from mhsxtrapy._constants import LATEX_ON
 from mhsxtrapy._field import ExtrapolationResult
+from mhsxtrapy.constants import LATEX_ON
 from mhsxtrapy.plotting._fieldline3d import fieldline3d
 
 from ._utils import _get_coordinates, _make_boxedges
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=LATEX_ON)
+
+__all__ = []
 
 
 def plot_fieldlines_grid(

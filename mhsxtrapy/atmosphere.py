@@ -2,8 +2,21 @@ from __future__ import annotations
 
 import numpy as np
 
-from mhsxtrapy._constants import G_SOLAR, KB, MBAR, MU0, T_CORONA, T_PHOTOSPHERE, L
 from mhsxtrapy._field import ExtrapolationResult
+from mhsxtrapy.constants import G_SOLAR, KB, MBAR, MU0, T_CORONA, T_PHOTOSPHERE, L
+
+__all__ = [
+    "btemp_linear",
+    "bpressure_linear",
+    "bdensity_linear",
+    "fpressure_linear",
+    "fdensity_linear",
+    "btemp_tanh",
+    "bpressure_tanh",
+    "bdensity_tanh",
+    "fpressure_tanh",
+    "fdensity_tanh",
+]
 
 
 def btemp_linear(
@@ -304,7 +317,7 @@ def fpressure_tanh(field: ExtrapolationResult) -> np.ndarray:
     )  # * (B0 * 10**-4) ** 2.0 / MU0
 
 
-def fdensity(field: ExtrapolationResult) -> np.ndarray:
+def fdensity_tanh(field: ExtrapolationResult) -> np.ndarray:
     """
     Returns full density described by equation (15) in Neukirch and Wiegelmann (2019) in
     normalised scale. Multiply by (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L) to get

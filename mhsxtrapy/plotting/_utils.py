@@ -4,11 +4,13 @@ import numpy as np
 from matplotlib import colormaps, colors, rc
 from scipy.ndimage import find_objects, label, maximum_filter, minimum_filter
 
-from mhsxtrapy._constants import LATEX_ON
 from mhsxtrapy._field import ExtrapolationResult
+from mhsxtrapy.constants import LATEX_ON
 from mhsxtrapy.types import FluxBalanceState
 
 rc("text", usetex=LATEX_ON)
+
+__all__ = []
 
 cmap_magneto = colors.LinearSegmentedColormap.from_list(
     "cmap_magneto",

@@ -9,7 +9,7 @@ from ._low import LowSolution
 from ._nadol_neukirch import NadolNeukirchSolution
 from ._neukirch_wiegelmann import NeukirchWiegelmannSolution
 
-__all__ = []
+__all__ = ["get_solution"]
 
 
 @lru_cache

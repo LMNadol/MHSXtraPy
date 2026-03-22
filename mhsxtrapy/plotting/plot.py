@@ -15,7 +15,8 @@ from matplotlib.patches import ConnectionPatch, Rectangle
 from scipy.interpolate import interp1d
 
 from mhsxtrapy._boundary import BoundaryData
-from mhsxtrapy._constants import (
+from mhsxtrapy._field import ExtrapolationResult
+from mhsxtrapy.constants import (
     DEFAULT_N_LINES,
     DEFAULT_PIXEL_STRIDE,
     G_SOLAR,
@@ -23,7 +24,6 @@ from mhsxtrapy._constants import (
     MU0,
     L,
 )
-from mhsxtrapy._field import ExtrapolationResult
 from mhsxtrapy.types import FluxBalanceState
 
 from ._3d import plot_fieldlines_AR, plot_fieldlines_grid
@@ -42,6 +42,8 @@ from ._utils import (
 
 rc("font", **{"family": "serif", "serif": ["Times"]})
 rc("text", usetex=LATEX_ON)
+
+__all__ = []
 
 
 def plot_magnetogram(data: BoundaryData) -> tuple[plt.Figure, plt.Axes]:

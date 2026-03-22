@@ -10,6 +10,13 @@ __all__ = [
     "P0",
     "MU0",
     "L",
+    "FLUX_BALANCE_THRESHOLD",
+    "ARCSEC_TO_RADIANS",
+    "PIXEL_SIZE_Z_DIRECTION_FITS",
+    "NZ_Z_DIRECTION_FITS",
+    "DEFAULT_N_LINES",
+    "DEFAULT_PIXEL_STRIDE",
+    "LATEX_ON",
 ]
 
 

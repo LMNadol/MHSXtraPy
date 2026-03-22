@@ -11,7 +11,7 @@ from astropy.io.fits import open as astroopen
 from scipy.interpolate import griddata
 from sunpy.map.sources import AIAMap
 
-from mhsxtrapy._constants import (
+from mhsxtrapy.constants import (
     ARCSEC_TO_RADIANS,
     FLUX_BALANCE_THRESHOLD,
     NZ_Z_DIRECTION_FITS,
@@ -20,14 +20,9 @@ from mhsxtrapy._constants import (
 )
 from mhsxtrapy.types import FluxBalanceState, Instrument
 
-__all__ = [
-    "BoundaryData",
-    "is_flux_balanced",
-    "alpha_HS04",
-    "max_a_parameter",
-]
-
 # TO DO `px`, `py`, `pz` could be confused with momentum. `dx`, `dy`, `dz` is the standard convention for grid spacing in computational physics. Alternatively, `pixel_x`, `pixel_y`, `pixel_z`.
+
+__all__ = []
 
 
 @dataclass
@@ -42,13 +37,13 @@ class BoundaryData:
     px, py, pz  :   Pixel sizes in x-, y-, z-direction, in normal length scale (Mm).
     x, y, z     :   1D arrays of grid points on which magnetic field is given with shapes (nx,), (ny,)
                     and (nz,) respectively.
-    bz          :   Bottom boundary magentogram of size (ny, nx,). Indexing of vectors done in this order,
+    bz          :   Bottom boundary magnetogram of size (ny, nx,). Indexing of vectors done in this order,
                     such that, following intuition, x-direction corresponds to latitudinal extension and
                     y-direction to longitudinal extension of the magnetic field.
-    bx          :   Bottom boundary magentogram of size (ny, nx,). Indexing of vectors done in this order,
+    bx          :   Bottom boundary magnetogram of size (ny, nx,). Indexing of vectors done in this order,
                     such that, following intuition, x-direction corresponds to latitudinal extension and
                     y-direction to longitudinal extension of the magnetic field. x-component.
-    by          :   Bottom boundary magentogram of size (ny, nx,). Indexing of vectors done in this order,
+    by          :   Bottom boundary magnetogram of size (ny, nx,). Indexing of vectors done in this order,
                     such that, following intuition, x-direction corresponds to latitudinal extension and
                     y-direction to longitudinal extension of the magnetic field. y-component.
     Returns:
@@ -86,8 +81,25 @@ class BoundaryData:
         cls, bz: np.ndarray, pixel_size: float, nz: int, pz: float
     ) -> BoundaryData:
 
+        if bz.ndim != 2:
+            raise ValueError(f"Input bz must be a 2D array, but got shape {bz.shape}.")
+
         nx = bz.shape[1]
         ny = bz.shape[0]
+
+        if nx <= 0 or ny <= 0:
+            raise ValueError(
+                f"Input bz must have positive dimensions, but got shape {bz.shape}."
+            )
+        if nz <= 0:
+            raise ValueError(f"Input nz must be positive, but got {nz}.")
+        if pixel_size <= 0:
+            raise ValueError(
+                f"Input pixel_size must be positive, but got {pixel_size}."
+            )
+        if pz <= 0:
+            raise ValueError(f"Input pz must be positive, but got {pz}.")
+
         px = py = pixel_size
 
         nf = min(nx, ny)

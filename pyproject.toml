@@ -26,23 +26,39 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "astropy>=7.2.0",
-    "h5py>=3.16.0",
-    "matplotlib>=3.10.8",
-    "numba>=0.64.0",
-    "numpy>=2.4.3",
-    "scipy>=1.17.1",
-    "sunpy>=7.1.0",
+    "astropy>=5.3",
+    "bs4>=0.0.2",
+    "drms>=0.7.0",
+    "h5py>=3.8.0",
+    "ipywidgets>=8.0.0",
+    "lxml>=4.9.0",
+    "matplotlib>=3.7.0",
+    "mpl-animators>=1.1.0",
+    "numba>=0.57.0",
+    "numpy>=1.24.0",
+    "reproject>=0.10.0",
+    "scipy>=1.10.0",
+    "sunpy>=5.0.0",
+    "zeep>=4.2.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pre-commit>=4.5.1",
+    "ruff>=0.11.0",
+    "ty>=0.0.23",
 ]
 test = [
     "pytest>=8.0.0",
+    "pytest-benchmark>=5.0.0",
     "pytest-cov>=6.0.0",
 ]
+typing = [
+    "ty>=0.0.23",
+]
+
+[tool.setuptools.package-data]
+mhsxtrapy = ["py.typed"]
 
 [project.urls]
 Homepage = "https://github.com/LMNadol/MHSXtraPy"
@@ -52,11 +68,27 @@ Issues = "https://github.com/LMNadol/MHSXtraPy/issues"
 [tool.setuptools.packages.find]
 include = ["mhsxtrapy*"]
 
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
 
-[dependency-groups]
-dev = [
-    "ty>=0.0.23",
+[tool.ty]
+python-version = "3.14"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",         # pyflakes
+    "I",         # isort
+    "UP",        # pyupgrade
+    "B",         # flake8-bugbear
+    "SIM",       # flake8-simplify
+    "NPY",       # numpy-specific rules
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["mhsxtrapy"]

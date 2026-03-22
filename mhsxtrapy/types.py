@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-__all__ = ["WhichSolution", "FluxBalanceState"]
+__all__ = ["WhichSolution", "FluxBalanceState", "Instrument"]
 
 
 class WhichSolution(Enum):

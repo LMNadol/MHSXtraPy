@@ -17,12 +17,11 @@ __all__: list[str] = [
     "plot_magnetogram",
     "plot_dpressure_z",
     "plot_ddensity_z",
-    "plot_magnetogram_3D",
+    "plot_field_3d",
     "plot_dpressure_xy",
     "plot_ddensity_xy",
     "show_poles",
     "show_footpoints",
     "find_corners_SolarOrbiter",
     "find_corners_SDO",
-    "plot_field_3d",
 ]
