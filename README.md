@@ -20,7 +20,7 @@ MHSXtraPy is a Python code for three-dimensional linear magnetohydrostatic (MHS)
 
 ## Theory
 
-MHSXtraPy solves the linear MHS equations in Cartesian geometry using Fourier decomposition in the horizontal directions and analytical solutions for the vertical structure. The non-force-free to force-free transition is modelled through height-dependent profile functions, allowing a physically consistent representation of the solar atmosphere from the photosphere through the chromosphere into the force-free corona. For a detailed description of the method, see [Nadol & Neukirch (2025)](https://doi.org/10.1007/s11207-025-02469-1).
+MHSXtraPy solves the linear MHS equations in Cartesian geometry using Fourier decomposition in the horizontal directions and analytical solutions for the vertical structure. The non-force-free to force-free transition is modelled through height-dependent profile functions, allowing a physically consistent representation of the solar atmosphere from the photosphere through the chromosphere into the force-free corona. For a detailed description of the method, see [Nadol & Neukirch (2025)](https://doi.org/10.1007/s11207-025-02469-1) and [Nadol & Neukirch (2025)](https://doi.org/10.1093/rasti/rzaf053).
 
 ## Installation
 
