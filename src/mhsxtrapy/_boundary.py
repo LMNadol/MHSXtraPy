@@ -47,8 +47,6 @@ class BoundaryData:
     by          :   Bottom boundary magnetogram of size (ny, nx,). Indexing of vectors done in this order,
                     such that, following intuition, x-direction corresponds to latitudinal extension and
                     y-direction to longitudinal extension of the magnetic field. y-component.
-    Returns:
-        _type_: BoundaryData object
     """
 
     nx: int

@@ -386,7 +386,7 @@ def show_poles(data: ExtrapolationResult) -> None:
 
 def show_footpoints(data: ExtrapolationResult) -> None:
     """
-    Show footpoints around centres of poles on photospheric magentogram.
+    Show footpoints around centres of poles on photospheric magnetogram.
     """
 
     sinks, sources = _detect_footpoints(data)

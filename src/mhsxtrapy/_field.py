@@ -35,7 +35,7 @@ class ExtrapolationResult:
     px, py, pz  :   Pixel sizes in x-, y-, z-direction, in normal length scale (Mm).
     x, y, z     :   1D arrays of grid points on which magnetic field is given with shapes (nx,), (ny,)
                     and (nz,) respectively.
-    bz          :   Bottom boundary magentogram of size (ny, nx,). Indexing of vectors done in this order,
+    bz          :   Bottom boundary magnetogram of size (ny, nx,). Indexing of vectors done in this order,
                     such that, following intuition, x-direction corresponds to latitudinal extension and
                     y-direction to longitudinal extension of the magnetic field.
     ------------------------------------------------------------------------------------------------------
@@ -346,7 +346,7 @@ def extrapolate(
     kappa: float | None = None,
 ) -> ExtrapolationResult:
     """
-    Create ExtrapolationResult object from BoundaryData object and choosen paramters using mhsxtrapy.b3d.b3d.
+    Create ExtrapolationResult object from BoundaryData object and chosen paramters using mhsxtrapy.b3d.b3d.
 
     Args:
         field2d (BoundaryData): boundary condition

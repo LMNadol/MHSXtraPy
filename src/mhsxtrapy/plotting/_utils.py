@@ -61,7 +61,7 @@ norm_hmi = colors.SymLogNorm(50, vmin=-7.5e2, vmax=7.5e2)
 
 def _detect_footpoints(data: ExtrapolationResult) -> tuple[np.ndarray, np.ndarray]:
     """
-    Detenct footpoints around centres of poles on photospheric magentogram.
+    Detenct footpoints around centres of poles on photospheric magnetogram.
 
     Args:
         data (ExtrapolationResult): magnetic field data
@@ -210,7 +210,7 @@ def _find_center(
     data: ExtrapolationResult,
 ) -> tuple[list[float], list[float], list[float], list[float]]:
     """
-    Find centres of poles on photospheric magentogram.
+    Find centres of poles on photospheric magnetogram.
     """
 
     _, xmax, _, ymax, _, _ = (
