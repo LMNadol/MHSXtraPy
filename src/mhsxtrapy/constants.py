@@ -23,6 +23,10 @@ __all__ = [
 T_PHOTOSPHERE = 5600.0  # Photospheric temperature
 T_CORONA = 2.0 * 10.0**6  # Coronal temperature
 
+Z_PHOTOSPHERE = 0.0  # Photospheric height, Mm
+Z_CORONA = 2.0 * 10**6  # Coronal height, Mm
+
+
 G_SOLAR = 272.2  # m/s^2
 KB = 1.380649 * 10**-23  # Boltzmann constant in Joule/ Kelvin = kg m^2/(Ks^2)
 MBAR = 1.67262 * 10**-27  # mean molecular weight (proton mass)
