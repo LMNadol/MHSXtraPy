@@ -69,11 +69,12 @@ Example Jupyter notebooks are provided in [`notebooks/`](notebooks/):
 
 | Notebook | Description |
 |----------|-------------|
-| [example-analytical-bc](notebooks/example-analytical-bc.ipynb) | Analytical multipole boundary condition |
+| [example-analytical-boundary-condition](notebooks/example-analytical-boundary-condition.ipynb) | Analytical multipole boundary condition with three solution families |
 | [example-low-lou](notebooks/example-low-lou.ipynb) | Semi-analytical non-linear force-free boundary (Low & Lou, 1990) |
-| [example-sdo](notebooks/example-sdo.ipynb) | SDO/HMI magnetogram as boundary condition |
-| [example-solar-orbiter](notebooks/example-solar-orbiter.ipynb) | Solar Orbiter/PHI-HRT magnetogram as boundary condition |
-| [paper](notebooks/paper.ipynb) | Reproduces the examples from the RASTI paper |
+| [example-from-observations](notebooks/example-from-observations.ipynb) | SDO/HMI or Solar Orbiter/PHI-HRT magnetogram as boundary condition |
+| [example-atmosphere](notebooks/example-atmosphere.ipynb) | 1D background atmosphere temperature, pressure, and density profiles |
+
+The script [`scripts/paper.py`](scripts/paper.py) reproduces the figures from [Nadol & Neukirch (2025)](https://doi.org/10.1093/rasti/rzaf053).
 
 ## Details
 
