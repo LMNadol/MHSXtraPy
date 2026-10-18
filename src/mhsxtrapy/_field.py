@@ -215,7 +215,7 @@ class ExtrapolationResult:
     @cached_property
     def ddensity(self) -> np.ndarray:
         """
-        Calculate variation in pressure described by equation (31) in Neukirch and Wiegelmann (2019).
+        Calculate variation in density described by equation (31) in Neukirch and Wiegelmann (2019).
         Normalised to same scale as BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bdensity (see L Nadol
         PhD thesis for details).
 
@@ -247,7 +247,7 @@ class ExtrapolationResult:
     @cached_property
     def j3d(self) -> np.ndarray:
         """
-        Calculate current density at all grid points. For details see function j3d below.
+        Calculate current density at all grid points. For details see function j3d below. In A/m^2.
 
         Returns:
             np.ndarray: 3D current density
@@ -277,7 +277,7 @@ class ExtrapolationResult:
     @cached_property
     def lf3d(self) -> np.ndarray:
         """
-        Calculate Lorentz force at all grid points. For details see function lf3d below.
+        Calculate Lorentz force at all grid points. For details see function lf3d below. In kg/(s^2m^2).
 
         Returns:
             np.ndarray: 3D Lorentz force
@@ -368,78 +368,3 @@ def extrapolate(
     )
 
     return data
-
-
-# def j3d(field3d: ExtrapolationResult) -> np.ndarray:
-#     """
-#     Returns current density, calucated from magnetic field as j = (alpha B + curl(0,0,f(z)Bz))/ mu0.
-#     In A/m^2.
-
-#     Args:
-#         field3d (ExtrapolationResult): magnetic field data
-
-#     Raises:
-#         ValueError: In case solution and parameter choices do not match
-
-#     Returns:
-#         np.ndarray: current density
-#     """
-
-#     sol = get_solution(
-#         field3d.solution,
-#         a=field3d.a,
-#         b=field3d.b,
-#         z0=field3d.z0,
-#         deltaz=field3d.deltaz,
-#         kappa=field3d.kappa,
-#     )
-
-#     j = np.zeros_like(field3d.field)
-
-#     j[:, :, :, 2] = field3d.alpha * field3d.field[:, :, :, 2] * 10**-4
-
-#     f_matrix = np.zeros_like(field3d.grad_bz[:, :, :, 0])
-#     f_matrix[:, :, :] = sol.f(field3d.z)
-
-#     j[:, :, :, 1] = (
-#         field3d.alpha * field3d.field[:, :, :, 1] * 10**-4
-#         + f_matrix * field3d.grad_bz[:, :, :, 0] * 10**-4
-#     )
-
-#     j[:, :, :, 0] = (
-#         field3d.alpha * field3d.field[:, :, :, 0] * 10**-4
-#         - f_matrix * field3d.grad_bz[:, :, :, 1] * 10**-4
-#     )
-#     return j / MU0 * L
-
-
-# def lf3d(field3d: ExtrapolationResult) -> np.ndarray:
-#     """
-#     Returns Lorentz force calculated from j x B.
-#     In kg/sm^2.
-
-#     Args:
-#         field3d (ExtrapolationResult): magnetic field data
-
-#     Returns:
-#         np.ndarray: 3D Lorentz force
-#     """
-
-#     j = field3d.j3d
-
-#     lf = np.zeros_like(field3d.field)
-
-#     lf[:, :, :, 0] = (
-#         j[:, :, :, 2] * field3d.field[:, :, :, 1] * 10**-4
-#         - j[:, :, :, 1] * field3d.field[:, :, :, 2] * 10**-4
-#     )
-#     lf[:, :, :, 1] = (
-#         j[:, :, :, 0] * field3d.field[:, :, :, 2] * 10**-4
-#         - j[:, :, :, 2] * field3d.field[:, :, :, 0] * 10**-4
-#     )
-#     lf[:, :, :, 2] = (
-#         j[:, :, :, 1] * field3d.field[:, :, :, 0] * 10**-4
-#         - j[:, :, :, 0] * field3d.field[:, :, :, 1] * 10**-4
-#     )
-
-#     return lf

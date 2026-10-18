@@ -19,9 +19,7 @@ __all__ = [
 ]
 
 
-def btemp_linear(
-    field3d: ExtrapolationResult, heights: np.ndarray, temps: np.ndarray
-) -> np.ndarray:
+def btemp_linear(field3d: ExtrapolationResult, heights: np.ndarray, temps: np.ndarray) -> np.ndarray:
     """
     Return background temperature by height in Kelvin using linear interpolation between
     given temperatures (temps) at given heights (heights). temps and heights must be arrays
@@ -51,16 +49,11 @@ def btemp_linear(
         np.array(heights)[h_indices + 1] - np.array(heights)[h_indices]
     )
 
-    temp = (
-        np.array(temps)[h_indices]
-        + (np.array(temps)[h_indices + 1] - np.array(temps)[h_indices]) * frac
-    )
+    temp = np.array(temps)[h_indices] + (np.array(temps)[h_indices + 1] - np.array(temps)[h_indices]) * frac
     return temp
 
 
-def bpressure_linear(
-    field3d: ExtrapolationResult, heights: np.ndarray, temps: np.ndarray
-) -> np.ndarray:
+def bpressure_linear(field3d: ExtrapolationResult, heights: np.ndarray, temps: np.ndarray) -> np.ndarray:
     """
     Returns background pressure resulting from background temperature btemp_linear.
     Gives background pressure height profile normalised to 1 on the photosphere.
@@ -91,9 +84,7 @@ def bpressure_linear(
     h_indices = np.searchsorted(heights, field3d.z, side="right") - 1
     h_indices = np.clip(h_indices, 0, len(heights) - 2)
 
-    qj = (np.array(temps)[1:] - np.array(temps)[:-1]) / (
-        np.array(heights)[1:] - np.array(heights)[:-1]
-    )
+    qj = (np.array(temps)[1:] - np.array(temps)[:-1]) / (np.array(heights)[1:] - np.array(heights)[:-1])
     expj = -T0 / (H * qj)
     tempj = (np.abs(np.array(temps)[1:]) / np.array(temps)[:-1]) ** expj
     sum_tempj = np.concatenate(([1.0], np.cumprod(tempj)))
@@ -104,17 +95,14 @@ def bpressure_linear(
         np.array(heights)[h_indices + 1] - np.array(heights)[h_indices]
     )
     tempz = (
-        abs(np.array(temps)[h_indices] + q * (field3d.z - np.array(heights)[h_indices]))
-        / np.array(temps)[h_indices]
+        abs(np.array(temps)[h_indices] + q * (field3d.z - np.array(heights)[h_indices])) / np.array(temps)[h_indices]
     ) ** (-T0 / (H * q))
     temp = pro_array * tempz
 
     return temp
 
 
-def bdensity_linear(
-    field3d: ExtrapolationResult, heights: np.ndarray, temps: np.ndarray
-) -> np.ndarray:
+def bdensity_linear(field3d: ExtrapolationResult, heights: np.ndarray, temps: np.ndarray) -> np.ndarray:
     """
     Returns background density resulting from background temperature btemp_linear. Gives background
     density height profile normalised to 1 on the photosphere. Need to multiply by
@@ -143,9 +131,7 @@ def bdensity_linear(
     return dummypres / dummytemp * temp0
 
 
-def fpressure_linear(
-    field3d: ExtrapolationResult, heights: np.ndarray, temps: np.ndarray
-) -> np.ndarray:
+def fpressure_linear(field3d: ExtrapolationResult, heights: np.ndarray, temps: np.ndarray) -> tuple:
     """
     Returns full pressure in kg/(s^2m) described by equation (14) in Neukirch and Wiegelmann (2019)
     from linear interpolated background temperature. Multiply by (B0 * 10**-4) ** 2.0 / MU0 to get
@@ -158,24 +144,19 @@ def fpressure_linear(
 
     Returns:
         np.ndarray: 3D full pressure, sum of background and variation
+        int: normalisation factor to convert to kg/(s^2m)
     """
 
     bp_matrix = np.zeros_like(field3d.dpressure)
     bp_matrix[:, :, :] = bpressure_linear(field3d, heights, temps)
 
-    return (
-        (field3d.BETA0 / 2.0 * bp_matrix + field3d.dpressure)
-        * (field3d.B0 * 10**-4) ** 2.0
-        / MU0
-    )
+    return ((field3d.BETA0 / 2.0 * bp_matrix + field3d.dpressure), (field3d.B0 * 10**-4) ** 2.0 / MU0)
 
 
-def fdensity_linear(
-    field3d: ExtrapolationResult, heights: np.ndarray, temps: np.ndarray
-) -> np.ndarray:
+def fdensity_linear(field3d: ExtrapolationResult, heights: np.ndarray, temps: np.ndarray) -> tuple:
     """
     Returns full density in kg/(m^3) described by equation (15) in Neukirch and Wiegelmann (2019)
-    resulting from linearly interpolated background temperature. Divide by
+    resulting from linearly interpolated background temperature. Multiply by
     (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L) to get in normalised scale as ddensity.
 
     Args:
@@ -185,6 +166,7 @@ def fdensity_linear(
 
     Returns:
         np.ndarray: 3D full density, sum of background and variation
+        int: normalisation factor to convert to kg/(m^3)
     """
 
     T0 = temps[np.argmin(np.abs(np.array(heights) - field3d.z0))]
@@ -195,9 +177,8 @@ def fdensity_linear(
     bd_matrix[:, :, :] = bdensity_linear(field3d, heights, temps)
 
     return (
-        (field3d.BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bd_matrix + field3d.ddensity)
-        * (field3d.B0 * 10**-4) ** 2.0
-        / (MU0 * G_SOLAR * L)
+        (field3d.BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bd_matrix + field3d.ddensity),
+        (field3d.B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L),
     )
 
 
@@ -214,13 +195,9 @@ def btemp_tanh(field: ExtrapolationResult) -> np.ndarray:
     """
 
     if field.z0 is None or field.deltaz is None:
-        raise ValueError(
-            "z0 and deltaz must not be None to compute background temperature."
-        )
+        raise ValueError("z0 and deltaz must not be None to compute background temperature.")
 
-    T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(field.z0 / field.deltaz)) / (
-        1.0 + np.tanh(field.z0 / field.deltaz)
-    )
+    T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(field.z0 / field.deltaz)) / (1.0 + np.tanh(field.z0 / field.deltaz))
     T1 = (T_CORONA - T_PHOTOSPHERE) / (1.0 + np.tanh(field.z0 / field.deltaz))
 
     return T0 + T1 * np.tanh((field.z - field.z0) / field.deltaz)
@@ -238,16 +215,12 @@ def bpressure_tanh(field: ExtrapolationResult) -> np.ndarray:
     """
 
     if field.z0 is None or field.deltaz is None:
-        raise ValueError(
-            "z0 and deltaz must not be None to compute background pressure."
-        )
+        raise ValueError("z0 and deltaz must not be None to compute background pressure.")
 
     T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(field.z0 / field.deltaz)) / (
         1.0 + np.tanh(field.z0 / field.deltaz)
     )  # in Kelvin
-    T1 = (T_CORONA - T_PHOTOSPHERE) / (
-        1.0 + np.tanh(field.z0 / field.deltaz)
-    )  # in Kelvin
+    T1 = (T_CORONA - T_PHOTOSPHERE) / (1.0 + np.tanh(field.z0 / field.deltaz))  # in Kelvin
     H = KB * T0 / (MBAR * G_SOLAR) / L  # in m
 
     q1 = field.deltaz / (2.0 * H * (1.0 + T1 / T0))
@@ -260,9 +233,7 @@ def bpressure_tanh(field: ExtrapolationResult) -> np.ndarray:
         / (1.0 + np.exp(-2.0 * (field.z - field.z0) / field.deltaz))
         / (1.0 + np.tanh(field.z0 / field.deltaz))
     )
-    p2 = (1.0 - np.tanh(field.z0 / field.deltaz)) / (
-        1.0 + np.tanh((field.z - field.z0) / field.deltaz)
-    )
+    p2 = (1.0 - np.tanh(field.z0 / field.deltaz)) / (1.0 + np.tanh((field.z - field.z0) / field.deltaz))
     p3 = (1.0 + T1 / T0 * np.tanh((field.z - field.z0) / field.deltaz)) / (
         1.0 - T1 / T0 * np.tanh(field.z0 / field.deltaz)
     )
@@ -282,16 +253,12 @@ def bdensity_tanh(field: ExtrapolationResult) -> np.ndarray:
     """
 
     if field.z0 is None or field.deltaz is None:
-        raise ValueError(
-            "z0 and deltaz must not be None to compute background density."
-        )
+        raise ValueError("z0 and deltaz must not be None to compute background density.")
 
     T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(field.z0 / field.deltaz)) / (
         1.0 + np.tanh(field.z0 / field.deltaz)
     )  # in Kelvin
-    T1 = (T_CORONA - T_PHOTOSPHERE) / (
-        1.0 + np.tanh(field.z0 / field.deltaz)
-    )  # in Kelvin
+    T1 = (T_CORONA - T_PHOTOSPHERE) / (1.0 + np.tanh(field.z0 / field.deltaz))  # in Kelvin
 
     temp0 = T0 - T1 * np.tanh(field.z0 / field.deltaz)  # in Kelvin
     dummypres = bpressure_tanh(field)
@@ -300,24 +267,23 @@ def bdensity_tanh(field: ExtrapolationResult) -> np.ndarray:
     return dummypres / dummytemp
 
 
-def fpressure_tanh(field: ExtrapolationResult) -> np.ndarray:
+def fpressure_tanh(field: ExtrapolationResult) -> tuple:
     """
     Returns full pressure described by equation (14) in Neukirch and Wiegelmann (2019) in
     normalised scale. Multiply by (B0 * 10**-4) ** 2.0 / MU0 to get into kg/(s^2m).
 
     Returns:
         np.ndarray: full 3D pressure, sum of background and variation
+        int: normalisation factor to convert to kg/(s^2m)
     """
 
     bp_matrix = np.zeros_like(field.dpressure)
     bp_matrix[:, :, :] = bpressure_tanh(field)
 
-    return (
-        field.BETA0 / 2.0 * bp_matrix + field.dpressure
-    )  # * (B0 * 10**-4) ** 2.0 / MU0
+    return (field.BETA0 / 2.0 * bp_matrix + field.dpressure, (field.B0 * 10**-4) ** 2.0 / MU0)
 
 
-def fdensity_tanh(field: ExtrapolationResult) -> np.ndarray:
+def fdensity_tanh(field: ExtrapolationResult) -> tuple:
     """
     Returns full density described by equation (15) in Neukirch and Wiegelmann (2019) in
     normalised scale. Multiply by (B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L) to get
@@ -325,18 +291,18 @@ def fdensity_tanh(field: ExtrapolationResult) -> np.ndarray:
 
     Returns:
         np.ndarray: full 3D density, sum of background and variation
+        int: normalisation factor to convert to kg/(m^3)
     """
 
     if field.z0 is None or field.deltaz is None or field.b is None:
         raise ValueError("z0, deltaz, and b must not be None to compute full density.")
 
-    T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(field.z0 / field.deltaz)) / (
-        1.0 + np.tanh(field.z0 / field.deltaz)
-    )
+    T0 = (T_PHOTOSPHERE + T_CORONA * np.tanh(field.z0 / field.deltaz)) / (1.0 + np.tanh(field.z0 / field.deltaz))
     H = KB * T0 / (MBAR * G_SOLAR) / L
 
     bd_matrix = np.zeros_like(field.ddensity)
     bd_matrix[:, :, :] = bdensity_tanh(field)
     return (
-        field.BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bd_matrix + field.ddensity
-    )  #  *(B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L)
+        field.BETA0 / (2.0 * H) * T0 / T_PHOTOSPHERE * bd_matrix + field.ddensity,
+        (field.B0 * 10**-4) ** 2.0 / (MU0 * G_SOLAR * L),
+    )
