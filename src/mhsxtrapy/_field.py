@@ -118,6 +118,12 @@ class ExtrapolationResult:
             f"flux_balance={self.flux_balance_state.value}{extra_str})"
         )
 
+    def _crop(self, arr: np.ndarray) -> np.ndarray:
+        """Restrict Seehafer-extended arrays to the physical domain."""
+        if self.flux_balance_state == FluxBalanceState.UNBALANCED:
+            return arr[self.ny : 2 * self.ny, self.nx : 2 * self.nx]
+        return arr
+
     def save(self, path: str | os.PathLike) -> None:
         """
         Save ExtrapolationResult object as HDF5 file.
@@ -164,15 +170,13 @@ class ExtrapolationResult:
 
     @cached_property
     def B0(self) -> float:
-        return self.field[
+        return self._crop(self.field)[
             :, :, 0, 2
         ].max()  # Gauss background magnetic field strength in 10^-4 kg/(s^2A) = 10^-4 T
 
     @cached_property
     def PB0(self) -> float:
-        return (self.B0 * 10**-4) ** 2 / (
-            2 * MU0
-        )  # magnetic pressure b0**2 / 2mu0 in kg/(s^2m)
+        return (self.B0 * 10**-4) ** 2 / (2 * MU0)  # magnetic pressure b0**2 / 2mu0 in kg/(s^2m)
 
     @cached_property
     def BETA0(self) -> float:
@@ -201,16 +205,7 @@ class ExtrapolationResult:
             kappa=self.kappa,
         )
 
-        if self.flux_balance_state == FluxBalanceState.BALANCED:
-            bz_matrix = self.field[:, :, :, 2]
-        elif self.flux_balance_state == FluxBalanceState.UNBALANCED:
-            bz_matrix = self.field[
-                self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 2
-            ]  # in Gauss
-        else:
-            raise ValueError(
-                f"Invalid flux_balance_state: {self.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
-            )
+        bz_matrix = self._crop(self.field)[..., 2]
 
         z_matrix = np.zeros_like(bz_matrix)
         z_matrix[:, :, :] = self.z
@@ -240,35 +235,14 @@ class ExtrapolationResult:
             kappa=self.kappa,
         )
 
-        if self.flux_balance_state == FluxBalanceState.BALANCED:
-            bz_matrix = self.field[:, :, :, 2]
-            bdotbz_matrix = (
-                self.field[:, :, :, 0] * self.grad_bz[:, :, :, 0]
-                + self.field[:, :, :, 1] * self.grad_bz[:, :, :, 1]
-                + self.field[:, :, :, 2] * self.grad_bz[:, :, :, 2]
-            )  # in Gauss**2
-        elif self.flux_balance_state == FluxBalanceState.UNBALANCED:
-            bz_matrix = self.field[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 2]
-            bdotbz_matrix = (
-                self.field[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 0]
-                * self.grad_bz[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 0]
-                + self.field[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 1]
-                * self.grad_bz[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 1]
-                + self.field[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 2]
-                * self.grad_bz[self.ny : 2 * self.ny, self.nx : 2 * self.nx, :, 2]
-            )  # in Gauss**2
-        else:
-            raise ValueError(
-                f"Invalid flux_balance_state: {self.flux_balance_state}. Expected 'BALANCED' or 'UNBALANCED'."
-            )
+        f, g = self._crop(self.field), self._crop(self.grad_bz)
+        bz_matrix = f[..., 2]
+        bdotbz_matrix = f[..., 0] * g[..., 0] + f[..., 1] * g[..., 1] + f[..., 2] * g[..., 2]
 
         z_matrix = np.zeros_like(bz_matrix)
         z_matrix[:, :, :] = self.z
 
-        return (
-            sol.dfdz(z_matrix) / 2.0 * bz_matrix**2 / self.B0**2
-            + sol.f(z_matrix) * bdotbz_matrix / self.B0**2
-        )
+        return sol.dfdz(z_matrix) / 2.0 * bz_matrix**2 / self.B0**2 + sol.f(z_matrix) * bdotbz_matrix / self.B0**2
 
     @cached_property
     def j3d(self) -> np.ndarray:
@@ -295,16 +269,10 @@ class ExtrapolationResult:
         f_matrix = np.zeros_like(self.grad_bz[:, :, :, 0])
         f_matrix[:, :, :] = sol.f(self.z)
 
-        j[:, :, :, 1] = (
-            self.alpha * self.field[:, :, :, 1] * 10**-4
-            + f_matrix * self.grad_bz[:, :, :, 0] * 10**-4
-        )
+        j[:, :, :, 1] = self.alpha * self.field[:, :, :, 1] * 10**-4 + f_matrix * self.grad_bz[:, :, :, 0] * 10**-4
 
-        j[:, :, :, 0] = (
-            self.alpha * self.field[:, :, :, 0] * 10**-4
-            - f_matrix * self.grad_bz[:, :, :, 1] * 10**-4
-        )
-        return j / (MU0 * L)
+        j[:, :, :, 0] = self.alpha * self.field[:, :, :, 0] * 10**-4 - f_matrix * self.grad_bz[:, :, :, 1] * 10**-4
+        return self._crop(j) / (MU0 * L)
 
     @cached_property
     def lf3d(self) -> np.ndarray:
@@ -314,23 +282,15 @@ class ExtrapolationResult:
         Returns:
             np.ndarray: 3D Lorentz force
         """
+        B = self._crop(self.field)
 
         j = self.j3d
 
-        lf = np.zeros_like(self.field)
+        lf = np.zeros_like(B)
 
-        lf[:, :, :, 0] = (
-            j[:, :, :, 2] * self.field[:, :, :, 1] * 10**-4
-            - j[:, :, :, 1] * self.field[:, :, :, 2] * 10**-4
-        )
-        lf[:, :, :, 1] = (
-            j[:, :, :, 0] * self.field[:, :, :, 2] * 10**-4
-            - j[:, :, :, 2] * self.field[:, :, :, 0] * 10**-4
-        )
-        lf[:, :, :, 2] = (
-            j[:, :, :, 1] * self.field[:, :, :, 0] * 10**-4
-            - j[:, :, :, 0] * self.field[:, :, :, 1] * 10**-4
-        )
+        lf[:, :, :, 0] = j[:, :, :, 2] * B[:, :, :, 1] * 10**-4 - j[:, :, :, 1] * B[:, :, :, 2] * 10**-4
+        lf[:, :, :, 1] = j[:, :, :, 0] * B[:, :, :, 2] * 10**-4 - j[:, :, :, 2] * B[:, :, :, 0] * 10**-4
+        lf[:, :, :, 2] = j[:, :, :, 1] * B[:, :, :, 0] * 10**-4 - j[:, :, :, 0] * B[:, :, :, 1] * 10**-4
 
         return lf
 
@@ -371,13 +331,9 @@ def extrapolate(
         WhichSolution.NEUKIRCH_WIEGELMANN,
         WhichSolution.NADOL_NEUKIRCH,
     ] and (b is None or z0 is None or deltaz is None):
-        raise ValueError(
-            f"Parameters b, z0 and deltaz must be provided for solution {which_solution.value}."
-        )
+        raise ValueError(f"Parameters b, z0 and deltaz must be provided for solution {which_solution.value}.")
     if which_solution == WhichSolution.LOW and kappa is None:
-        raise ValueError(
-            f"Parameter kappa must be provided for solution {which_solution.value}."
-        )
+        raise ValueError(f"Parameter kappa must be provided for solution {which_solution.value}.")
     if which_solution in [
         WhichSolution.NEUKIRCH_WIEGELMANN,
         WhichSolution.NADOL_NEUKIRCH,
@@ -387,9 +343,7 @@ def extrapolate(
             f"Maximum allowed value is {max_a_parameter(field2d, alpha, b)}."
         )
 
-    mf3d, dbz3d = _extrapolate_3d(
-        field2d, alpha, a, which_solution, b, z0, deltaz, kappa
-    )
+    mf3d, dbz3d = _extrapolate_3d(field2d, alpha, a, which_solution, b, z0, deltaz, kappa)
 
     data = ExtrapolationResult(
         nx=field2d.nx,
