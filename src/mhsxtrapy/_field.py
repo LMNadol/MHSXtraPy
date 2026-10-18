@@ -304,7 +304,7 @@ class ExtrapolationResult:
             self.alpha * self.field[:, :, :, 0] * 10**-4
             - f_matrix * self.grad_bz[:, :, :, 1] * 10**-4
         )
-        return j / MU0 * L
+        return j / (MU0 * L)
 
     @cached_property
     def lf3d(self) -> np.ndarray:

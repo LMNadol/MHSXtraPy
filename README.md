@@ -41,7 +41,7 @@ import numpy as np
 
 import mhsxtrapy
 from mhsxtrapy.examples import multipole
-from mhsxtrapy.plotting import plot_field_3d
+from mhsxtrapy.plotting import plot_field_3d, plot_magnetogram
 
 # 1. Create a boundary condition from an analytical multipole
 nx, ny = 200, 200
